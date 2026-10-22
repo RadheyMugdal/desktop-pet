@@ -338,10 +338,26 @@ function detectOS() {
 
 document.querySelectorAll('[data-file]').forEach((a) => {
   a.href = fileUrl(a.dataset.file);
-  a.setAttribute('download', '');
 });
 document.querySelectorAll('[data-version]').forEach((el) => (el.textContent = VERSION));
 document.getElementById('releases-link').href = releases;
+
+// GitHub redirects the click through two hops before the file lands, so give the
+// button some feedback right away — otherwise the wait can look like a freeze.
+function markStarting(a) {
+  const label = a.querySelector('.btn-label') || a;
+  if (a.dataset.busy) return;
+  const original = label.textContent;
+  a.dataset.busy = '1';
+  label.textContent = 'Starting download…';
+  setTimeout(() => {
+    label.textContent = original;
+    delete a.dataset.busy;
+  }, 4000);
+}
+document.querySelectorAll('[data-file], #primary-download').forEach((a) => {
+  a.addEventListener('click', () => markStarting(a));
+});
 
 const os = detectOS();
 const primary = document.getElementById('primary-download');
@@ -351,7 +367,6 @@ if (os) {
   const names = { windows: 'Windows', mac: 'macOS', linux: 'Linux' };
   primary.querySelector('.btn-label').textContent = `Download for ${names[os]}`;
   primary.href = fileUrl(os === 'linux' ? 'appimage' : os);
-  primary.setAttribute('download', '');
   note.textContent = `Free · v${VERSION} · No account, no internet. About 1% of one CPU core.`;
 } else {
   note.textContent = 'Available for Windows, macOS and Linux. Open this page on your computer to download.';
