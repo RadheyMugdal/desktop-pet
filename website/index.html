@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Desktop Pet: a tiny cat that lives on your taskbar</title>
+    <meta
+      name="description"
+      content="A free pixel cat that sits by your clock, naps, grooms and lets your clicks pass right through. For Windows, macOS and Linux."
+    />
+    <link rel="icon" href="assets/icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500..800,100,1&family=Silkscreen&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="#top">
+        <span class="brand-cat sprite" data-sheet="assets/kitten/idle.png" data-frames="10" data-scale="1" data-fps="6"></span>
+        Desktop Pet
+      </a>
+      <nav>
+        <a href="#why">Why it's different</a>
+        <a href="#pets">Pets</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-cta" href="#download">Download</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <!-- ============ HERO ============ -->
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span> Free · Windows · macOS · Linux</p>
+          <h1>A tiny cat that <em>keeps you company</em> while you work.</h1>
+          <p class="lede">
+            It curls up by your clock, grooms, yawns and naps, and stays out of your way. Clicks pass right
+            through it to your apps. Pet it when you need a break.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary" id="primary-download" href="#download">
+              <span class="btn-icon" aria-hidden="true"></span>
+              <span class="btn-label">Download free</span>
+            </a>
+            <a class="btn btn-ghost" href="#download">Other platforms</a>
+          </div>
+          <p class="fine" id="primary-note">No account. No internet. About 1% of one CPU core.</p>
+        </div>
+
+        <div class="screen-wrap">
+          <div class="screen" id="screen">
+            <div class="wallpaper"></div>
+            <div class="app-window">
+              <div class="titlebar"><i></i><i></i><i></i><span>notes.txt</span></div>
+              <div class="doc">
+                <p class="doc-line w90"></p>
+                <p class="doc-line w70"></p>
+                <p class="doc-line w80"></p>
+                <p class="doc-line w40"></p>
+                <p class="doc-line w75"></p>
+                <p class="doc-line w60"></p>
+              </div>
+            </div>
+
+            <div class="hint" id="hint">pet me, or drag me ✦</div>
+
+            <div class="mini-pet" id="mini-pet" role="button" aria-label="Pet the kitten" tabindex="0">
+              <div class="mini-body">
+                <div class="sprite" id="mini-sprite" data-sheet="assets/kitten/idle.png" data-frames="10" data-scale="3" data-fps="6"></div>
+              </div>
+              <div class="fx" id="mini-fx"></div>
+            </div>
+
+            <div class="taskbar">
+              <span class="tb-start"></span>
+              <span class="tb-app"></span>
+              <span class="tb-app"></span>
+              <span class="tb-app active"></span>
+              <span class="tb-spacer"></span>
+              <span class="tb-clock" id="clock">9:41</span>
+            </div>
+          </div>
+          <p class="screen-caption">This is the real kitten from the app. Go ahead and pet it.</p>
+        </div>
+      </section>
+
+      <!-- ============ WHY ============ -->
+      <section class="why" id="why">
+        <h2 class="section-title"><span class="px">01</span> Built to stay out of your way</h2>
+        <div class="why-grid">
+          <article class="card">
+            <div class="card-art">
+              <div class="sprite" data-sheet="assets/kitten/box.png" data-frames="4" data-scale="3" data-fps="4"></div>
+            </div>
+            <h3>It has a home spot</h3>
+            <p>
+              Your pet lives in the bottom-right corner by default and only takes a few steps now and then. Drag it
+              anywhere and that becomes its new home. If you'd like it to wander, turn on <b>Roam freely</b>.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-art cursor-art" aria-hidden="true">
+              <svg viewBox="0 0 12 18" class="px-cursor">
+                <path d="M0 0h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H7v1h1v2h1v2H7v-2H6v-2H5v1H4v1H3v1H2v1H1v1H0z" fill="#2a211d" />
+                <path d="M1 2h1v1h1v1h1v1h1v1h1v1h1v1h1v1h1v1H6v1h1v2h1v1H7v-2H6v-2H4v1H3v1H2v1H1z" fill="#fffaf2" />
+              </svg>
+              <span class="ripple"></span>
+            </div>
+            <h3>Clicks go straight through</h3>
+            <p>
+              The pet only catches the mouse when you point right at it. Everywhere else, clicks reach your windows,
+              icons and taskbar as if it weren't there.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-art">
+              <div class="sprite" data-sheet="assets/cat/colors/black.png" data-row="13" data-frames="2" data-cols="11" data-rows="53" data-scale="3" data-fps="1.5"></div>
+              <span class="zz">z<span>z</span></span>
+            </div>
+            <h3>Light as a nap</h3>
+            <p>
+              About <b>1% of one CPU core</b> while it sits. It hides and stops completely while you game or watch
+              fullscreen video. It's built on Tauri, not Electron.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ PETS ============ -->
+      <section class="pets" id="pets">
+        <h2 class="section-title"><span class="px">02</span> Pick your pet</h2>
+
+        <div class="pets-grid">
+          <article class="pet-card kitten-card">
+            <div class="pet-stage soft">
+              <div class="sprite" id="kitten-sprite" data-sheet="assets/kitten/idle.png" data-frames="10" data-scale="5" data-fps="6"></div>
+            </div>
+            <div class="pet-info">
+              <p class="tag">Default</p>
+              <h3>Kitten</h3>
+              <p>Round-faced, a little sleepy, and very fond of its cardboard box.</p>
+              <div class="chips" data-target="kitten">
+                <button class="chip on" data-sheet="assets/kitten/idle.png" data-frames="10" data-fps="6">Classic</button>
+                <button class="chip" data-sheet="assets/kitten/dracula.png" data-frames="6" data-fps="6">Dracula</button>
+                <button class="chip" data-sheet="assets/kitten/box.png" data-frames="4" data-fps="4">In its box</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="pet-card cat-card">
+            <div class="pet-stage">
+              <div class="layered" id="cat-layered">
+                <div class="sprite" id="cat-sprite" data-sheet="assets/cat/colors/ginger.png" data-row="0" data-frames="1" data-cols="11" data-rows="53" data-scale="7" data-fps="1"></div>
+                <div class="sprite overlay" id="cat-outfit" data-row="0" data-frames="1" data-cols="11" data-rows="53" data-scale="7" data-fps="1"></div>
+              </div>
+            </div>
+            <div class="pet-info">
+              <p class="tag">40+ animations</p>
+              <h3>Cat</h3>
+              <p>Grooms, scratches, yawns, swats at your cursor, and hisses if you shake it.</p>
+
+              <p class="mini-label">Doing</p>
+              <div class="chips" id="cat-actions"></div>
+
+              <p class="mini-label">Color</p>
+              <div class="swatches" id="cat-colors"></div>
+
+              <p class="mini-label">Outfit</p>
+              <div class="chips small" id="cat-outfits"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============ DOWNLOAD ============ -->
+      <section class="download" id="download">
+        <h2 class="section-title"><span class="px">03</span> Adopt one</h2>
+        <p class="section-lede">Free, version <span data-version>0.1.0</span>. Install it, and your pet drops onto your taskbar.</p>
+
+        <div class="dl-grid">
+          <article class="dl-card" data-os="windows">
+            <span class="badge">Your system</span>
+            <div class="os-icon win" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <h3>Windows</h3>
+            <p class="req">Windows 10 or 11 · 64-bit</p>
+            <a class="btn btn-primary" data-file="windows">Download .exe</a>
+            <details>
+              <summary>First launch</summary>
+              <p>
+                Windows may show “Windows protected your PC” because the app isn't signed yet. Click
+                <b>More info</b>, then <b>Run anyway</b>.
+              </p>
+            </details>
+          </article>
+
+          <article class="dl-card" data-os="mac">
+            <span class="badge">Your system</span>
+            <div class="os-icon mac" aria-hidden="true"></div>
+            <h3>macOS</h3>
+            <p class="req">macOS 10.15 or later · Apple silicon &amp; Intel</p>
+            <a class="btn btn-primary" data-file="mac">Download .dmg</a>
+            <details>
+              <summary>First launch</summary>
+              <p>
+                Drag Desktop Pet into Applications. The first time, <b>right-click</b> the app and choose
+                <b>Open</b>, then click <b>Open</b> again. macOS asks because the app isn't notarized yet.
+              </p>
+            </details>
+          </article>
+
+          <article class="dl-card" data-os="linux">
+            <span class="badge">Your system</span>
+            <div class="os-icon tux" aria-hidden="true"></div>
+            <h3>Linux</h3>
+            <p class="req">64-bit · X11 desktop</p>
+            <div class="btn-pair">
+              <a class="btn btn-primary" data-file="appimage">AppImage</a>
+              <a class="btn btn-ghost" data-file="deb">.deb</a>
+            </div>
+            <details>
+              <summary>First launch</summary>
+              <p>
+                For the AppImage, run <code>chmod +x DesktopPet-linux-x86_64.AppImage</code> and then open it. On
+                Ubuntu or Debian you can install the .deb instead. Wayland doesn't let apps place their own windows,
+                so for now the pet works best in an X11 session.
+              </p>
+            </details>
+          </article>
+        </div>
+        <p class="fine center">
+          Looking for an older version or the source code?
+          <a id="releases-link" href="#">See all releases</a>.
+        </p>
+      </section>
+
+      <!-- ============ FAQ ============ -->
+      <section class="faq" id="faq">
+        <h2 class="section-title"><span class="px">04</span> Questions</h2>
+        <div class="faq-list">
+          <details open>
+            <summary>Is it really free?</summary>
+            <p>Yes. No trial, no account and no ads.</p>
+          </details>
+          <details>
+            <summary>Does it collect anything?</summary>
+            <p>
+              No. The app never connects to the internet. It only checks where your mouse is, to know when you're
+              pointing at the pet, and that never leaves your computer.
+            </p>
+          </details>
+          <details>
+            <summary>How do I change pets, colors or outfits?</summary>
+            <p>
+              Click the cat icon in your system tray (Windows and Linux) or menu bar (macOS) and use <b>Pet</b>,
+              <b>Color</b> and <b>Outfit</b>. It remembers your choices.
+            </p>
+          </details>
+          <details>
+            <summary>It's in my way. How do I move it?</summary>
+            <p>
+              Drag it anywhere and drop it. That spot becomes its new home. If it ever goes missing, choose
+              <b>Bring pet back</b> in the tray menu.
+            </p>
+          </details>
+          <details>
+            <summary>Will it slow down my games?</summary>
+            <p>
+              No. When a game or video goes fullscreen, the pet hides and stops animating until you're back
+              (on Windows today, with macOS and Linux coming next).
+            </p>
+          </details>
+          <details>
+            <summary>How do I quit or uninstall it?</summary>
+            <p>
+              Choose <b>Quit</b> in the tray menu. Uninstall it like any other app: Settings → Apps on Windows, drag
+              it to the Trash on macOS, or remove the package on Linux.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-pets" aria-hidden="true">
+        <div class="sprite walker" data-sheet="assets/cat/colors/white.png" data-row="7" data-frames="8" data-cols="11" data-rows="53" data-scale="2" data-fps="10"></div>
+      </div>
+      <p>
+        Made with <a href="https://tauri.app">Tauri</a>. Pixel art from free community asset packs. Thank you to
+        their artists.
+      </p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

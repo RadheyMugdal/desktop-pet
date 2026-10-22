@@ -1,0 +1,85 @@
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The window covers the whole work area and lets clicks through. #root is the
+   pet's box (its sprite cell, cut off below the feet); main.js moves it around
+   with translate. #body carries the wiggle and squash. */
+#root {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: translate;
+}
+#body {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%; /* the pet's feet */
+}
+
+/* #sprite holds the cat and its outfit, which share one sheet layout. */
+#sprite {
+  position: relative;
+}
+#pet,
+#outfit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+#pet {
+  cursor: grab;
+}
+#outfit {
+  pointer-events: none;
+}
+
+#body.drag {
+  transform-origin: 50% 15%;
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+#body.drag #pet {
+  cursor: grabbing;
+}
+#body.land {
+  animation: squash 0.25s ease-out;
+}
+#body.happy {
+  animation: jump 0.4s ease-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { rotate: -8deg; }
+  50% { rotate: 8deg; }
+}
+@keyframes jump {
+  0%, 100% { translate: 0 0; }
+  40% { translate: 0 -14px; }
+}
+@keyframes squash {
+  0% { scale: 1.25 0.75; }
+  100% { scale: 1 1; }
+}
+
+/* Floating hearts and z's (moved by the loop in main.js) */
+#fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fx {
+  position: absolute;
+  font: bold 16px system-ui, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.fx.heart { color: #ff5d84; }
+.fx.z { color: #9fb4ff; font-size: 14px; }

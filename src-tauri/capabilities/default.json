@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissions for the pet window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-position",
+    "core:window:allow-show",
+    "core:window:allow-set-size",
+    "core:window:allow-cursor-position",
+    "core:window:allow-monitor-from-point",
+    "core:window:allow-current-monitor"
+  ]
+}

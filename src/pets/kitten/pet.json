@@ -1,0 +1,34 @@
+{
+  "name": "Kitten",
+  "frameSize": 32,
+  "scale": 3,
+  "ground": 32,
+  "hitbox": [0, 4, 25, 32],
+  "walkSpeed": 30,
+
+  "colors": [
+    { "id": "classic", "name": "Classic", "file": "idle.png" },
+    {
+      "id": "dracula",
+      "name": "Dracula",
+      "file": "idle.png",
+      "remap": { "sit": "sit_dracula", "walk": "walk_dracula", "nap": "nap_dracula", "dangle": "nap_dracula" }
+    }
+  ],
+  "outfits": [],
+
+  "fallback": "sit",
+  "sleepPoses": ["nap"],
+
+  "animations": {
+    "sit": { "row": 0, "frames": 10, "fps": 6 },
+    "walk": { "row": 0, "frames": 10, "fps": 10, "hop": true },
+    "nap": { "row": 0, "frames": 1 },
+    "dangle": { "row": 0, "frames": 1 },
+    "lie": { "file": "box.png", "row": 0, "frames": 4, "fps": 4 },
+
+    "sit_dracula": { "file": "dracula.png", "row": 0, "frames": 6, "fps": 6 },
+    "walk_dracula": { "file": "dracula.png", "row": 0, "frames": 6, "fps": 10, "hop": true },
+    "nap_dracula": { "file": "dracula.png", "row": 0, "frames": 1 }
+  }
+}

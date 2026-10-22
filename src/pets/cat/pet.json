@@ -1,0 +1,77 @@
+{
+  "name": "Cat",
+  "frameSize": 32,
+  "scale": 4,
+  "ground": 25,
+  "hitbox": [4, 6, 28, 25],
+  "walkSpeed": 38,
+  "sheet": { "columns": 11, "rows": 53 },
+
+  "colors": [
+    { "id": "ginger", "name": "Ginger", "file": "colors/ginger.png" },
+    { "id": "white", "name": "White", "file": "colors/white.png" },
+    { "id": "black", "name": "Black", "file": "colors/black.png" }
+  ],
+
+  "outfits": [
+    { "id": "pink-bow", "name": "Pink bow", "file": "outfits/pink-bow.png" },
+    { "id": "red-bow", "name": "Red bow", "file": "outfits/red-bow.png" },
+    { "id": "gold-bow", "name": "Gold bow", "file": "outfits/gold-bow.png" },
+    { "id": "pink-ribbon", "name": "Pink ribbon", "file": "outfits/pink-ribbon.png" },
+    { "id": "blue-ribbon", "name": "Blue ribbon", "file": "outfits/blue-ribbon.png" },
+    { "id": "green-ribbon", "name": "Green ribbon", "file": "outfits/green-ribbon.png" },
+    { "id": "red-heart-glasses", "name": "Red heart glasses", "file": "outfits/red-heart-glasses.png" },
+    { "id": "gold-heart-glasses", "name": "Gold heart glasses", "file": "outfits/gold-heart-glasses.png" },
+    { "id": "halo", "name": "Halo", "file": "outfits/halo.png" },
+    { "id": "wings", "name": "Angel wings", "file": "outfits/wings.png" },
+    { "id": "cupid", "name": "Cupid (wings + halo)", "file": "outfits/cupid.png" }
+  ],
+
+  "fallback": "sit",
+  "sleepPoses": ["sleep1", "sleep2", "sleep3", "sleep4"],
+  "fidgets": {
+    "sit": ["wash_sit", "wash_sit", "yawn_sit", "scratch_left", "scratch_right"],
+    "lie": ["wash_lie", "yawn_lie"]
+  },
+  "reactions": {
+    "sit": ["meow_sit", "meow_sit", "hind_legs"],
+    "lie": ["meow_lie"]
+  },
+
+  "animations": {
+    "sit": { "row": 0, "frames": 1 },
+    "lie_left": { "row": 3, "col": 0, "frames": 1, "dy": 1 },
+    "lie_right": { "row": 3, "col": 1, "frames": 1, "dy": 1 },
+
+    "walk_right": { "row": 6, "frames": 8, "fps": 10 },
+    "walk_left": { "row": 7, "frames": 8, "fps": 10 },
+
+    "sleep1_left": { "row": 12, "frames": 2, "fps": 1.5, "dy": 1 },
+    "sleep1_right": { "row": 13, "frames": 2, "fps": 1.5, "dy": 1 },
+    "sleep2_left": { "row": 14, "frames": 2, "fps": 1.5, "dy": 2 },
+    "sleep2_right": { "row": 15, "frames": 2, "fps": 1.5, "dy": 2 },
+    "sleep3_left": { "row": 16, "frames": 2, "fps": 1.5, "dy": 2 },
+    "sleep3_right": { "row": 17, "frames": 2, "fps": 1.5, "dy": 2 },
+    "sleep4_left": { "row": 18, "frames": 2, "fps": 1.5, "dy": 1 },
+    "sleep4_right": { "row": 19, "frames": 2, "fps": 1.5, "dy": 1 },
+
+    "eat_left": { "row": 22, "frames": 8, "fps": 8 },
+    "eat_right": { "row": 23, "frames": 8, "fps": 8 },
+
+    "meow_sit": { "row": 28, "frames": 3, "fps": 6 },
+    "meow_lie": { "row": 31, "frames": 3, "fps": 6, "dy": 1 },
+    "yawn_sit": { "row": 32, "frames": 8, "fps": 8 },
+    "yawn_lie": { "row": 35, "frames": 8, "fps": 8, "dy": 1 },
+    "wash_sit": { "row": 36, "frames": 9, "fps": 8 },
+    "wash_lie": { "row": 38, "frames": 7, "fps": 8, "dy": 1 },
+    "scratch_left": { "row": 39, "frames": 11, "fps": 10 },
+    "scratch_right": { "row": 40, "frames": 11, "fps": 10 },
+
+    "hiss_left": { "row": 41, "frames": 2, "fps": 4 },
+    "hiss_right": { "row": 42, "frames": 2, "fps": 4 },
+    "dangle": { "row": 43, "frames": 1 },
+    "paw_left": { "row": 46, "frames": 7, "fps": 12 },
+    "paw_right": { "row": 47, "frames": 7, "fps": 12 },
+    "hind_legs": { "row": 52, "frames": 4, "fps": 6 }
+  }
+}
