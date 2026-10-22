@@ -9,6 +9,7 @@ use tauri::{
     tray::TrayIconBuilder,
     AppHandle, Emitter, Manager, State, Wry,
 };
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 const TRAY_ID: &str = "main";
 /// Radio-style groups in the tray menu. Item ids are "<group>:<choice id>".
@@ -20,28 +21,51 @@ struct Choice {
     name: String,
 }
 
-/// Check items for each radio group, kept so we can make each group behave
-/// like radio buttons.
+/// Menu items we need to reach after the menu is built. The same menu is used
+/// for the tray icon and for right-clicking the pet.
 #[derive(Default)]
 struct TrayState {
+    menu: Option<Menu<Wry>>,
+    /// Check items for each radio group, so each group behaves like radio buttons.
     groups: Vec<(&'static str, Vec<CheckMenuItem<Wry>>)>,
     roam: Option<CheckMenuItem<Wry>>,
+    autostart: Option<CheckMenuItem<Wry>>,
+    breaks: Option<CheckMenuItem<Wry>>,
+    update: Option<MenuItem<Wry>>,
 }
 
-fn build_menu(app: &AppHandle, extra: &[&dyn IsMenuItem<Wry>]) -> tauri::Result<Menu<Wry>> {
+/// Builds the full menu around the pet-specific items in `extra`, installs it
+/// on the tray, and remembers the items we update later.
+fn install_menu(app: &AppHandle, extra: &[&dyn IsMenuItem<Wry>], mut state: TrayState) -> tauri::Result<()> {
     let nap = MenuItem::with_id(app, "sleep", "Nap time", true, None::<&str>)?;
     let reset = MenuItem::with_id(app, "reset", "Bring pet back", true, None::<&str>)?;
+    let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
+    let autostart = CheckMenuItem::with_id(app, "autostart", "Start with computer", true, autostart_on, None::<&str>)?;
+    let breaks_on = app.state::<presence::Settings>().breaks.load(std::sync::atomic::Ordering::Relaxed);
+    let breaks = CheckMenuItem::with_id(app, "breaks", "Break reminders", true, breaks_on, None::<&str>)?;
+    let update = MenuItem::with_id(app, "update", updates::label(app), true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let sep1 = PredefinedMenuItem::separator(app)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
+    let sep3 = PredefinedMenuItem::separator(app)?;
 
     let mut items: Vec<&dyn IsMenuItem<Wry>> = vec![&nap, &reset, &sep1];
     items.extend_from_slice(extra);
     if !extra.is_empty() {
         items.push(&sep2);
     }
-    items.push(&quit);
-    Menu::with_items(app, &items)
+    items.extend([&breaks as &dyn IsMenuItem<Wry>, &autostart, &update, &sep3, &quit]);
+    let menu = Menu::with_items(app, &items)?;
+
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        tray.set_menu(Some(menu.clone()))?;
+    }
+    state.menu = Some(menu);
+    state.autostart = Some(autostart);
+    state.breaks = Some(breaks);
+    state.update = Some(update);
+    *app.state::<Mutex<TrayState>>().lock().unwrap() = state;
+    Ok(())
 }
 
 fn as_items(items: &[CheckMenuItem<Wry>]) -> Vec<&dyn IsMenuItem<Wry>> {
@@ -53,7 +77,6 @@ fn as_items(items: &[CheckMenuItem<Wry>]) -> Vec<&dyn IsMenuItem<Wry>> {
 #[tauri::command]
 fn set_menu(
     app: AppHandle,
-    state: State<Mutex<TrayState>>,
     pets: Vec<Choice>,
     pet: String,
     colors: Vec<Choice>,
@@ -89,14 +112,21 @@ fn set_menu(
     }
     extra.push(&roam_item);
 
-    let menu = build_menu(&app, &extra)?;
-    if let Some(tray) = app.tray_by_id(TRAY_ID) {
-        tray.set_menu(Some(menu))?;
-    }
-    *state.lock().unwrap() = TrayState {
+    let state = TrayState {
         groups: vec![("pet", pet_items), ("color", color_items), ("outfit", outfit_items)],
-        roam: Some(roam_item),
+        roam: Some(roam_item.clone()),
+        ..Default::default()
     };
+    install_menu(&app, &extra, state)
+}
+
+/// Right-clicking the pet opens the same menu as the tray icon.
+#[tauri::command]
+fn show_pet_menu(window: tauri::Window, state: State<Mutex<TrayState>>) -> tauri::Result<()> {
+    let menu = state.lock().unwrap().menu.clone();
+    if let Some(menu) = menu {
+        window.popup_menu(&menu)?;
+    }
     Ok(())
 }
 
@@ -113,42 +143,287 @@ fn on_menu_event(app: &AppHandle, id: &str) {
         let _ = app.emit(group, choice);
         return;
     }
+    let state = app.state::<Mutex<TrayState>>();
     match id {
         "quit" => app.exit(0),
         "roam" => {
-            let state = app.state::<Mutex<TrayState>>();
             let on = state.lock().unwrap().roam.as_ref().and_then(|i| i.is_checked().ok());
             if let Some(on) = on {
                 let _ = app.emit("roam", on);
             }
         }
+        "autostart" => {
+            let on = state.lock().unwrap().autostart.as_ref().and_then(|i| i.is_checked().ok());
+            let launcher = app.autolaunch();
+            let _ = match on {
+                Some(true) => launcher.enable(),
+                Some(false) => launcher.disable(),
+                None => Ok(()),
+            };
+        }
+        "breaks" => {
+            let on = state.lock().unwrap().breaks.as_ref().and_then(|i| i.is_checked().ok());
+            if let Some(on) = on {
+                app.state::<presence::Settings>().breaks.store(on, std::sync::atomic::Ordering::Relaxed);
+                let _ = app.emit("breaks", on); // the frontend remembers the choice
+            }
+        }
+        "update" => updates::menu_clicked(app.clone()),
         _ => {
             let _ = app.emit("tray", id);
         }
     }
 }
 
+/// Turn "Start with computer" on the first time an installed copy runs.
+/// Debug builds never touch it, so `npm run dev` doesn't register itself.
+fn enable_autostart_once(app: &AppHandle) {
+    if cfg!(debug_assertions) {
+        return;
+    }
+    let Ok(dir) = app.path().app_config_dir() else { return };
+    let marker = dir.join("autostart-initialized");
+    if marker.exists() {
+        return;
+    }
+    let _ = app.autolaunch().enable();
+    let _ = std::fs::create_dir_all(&dir);
+    let _ = std::fs::write(marker, "");
+}
+
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Mutex::new(TrayState::default()))
+        .manage(updates::Pending::default())
+        .manage(presence::Settings::default())
         .manage(hit::Hitbox::default())
-        .invoke_handler(tauri::generate_handler![set_menu, hit::set_hitbox, hit::hold_cursor])
+        .invoke_handler(tauri::generate_handler![
+            set_menu,
+            show_pet_menu,
+            hit::set_hitbox,
+            hit::hold_cursor,
+            presence::set_break_reminders
+        ])
         .setup(|app| {
-            let menu = build_menu(app.handle(), &[])?;
             TrayIconBuilder::with_id(TRAY_ID)
                 .icon(app.default_window_icon().unwrap().clone())
                 .tooltip("Desktop Pet")
-                .menu(&menu)
                 .on_menu_event(|app, event| on_menu_event(app, event.id.as_ref()))
                 .build(app)?;
+            enable_autostart_once(app.handle());
+            install_menu(app.handle(), &[], TrayState::default())?;
 
             hit::watch(app.handle().clone());
+            updates::watch(app.handle().clone());
+            presence::watch(app.handle().clone());
             #[cfg(windows)]
             fullscreen::watch(app.handle().clone());
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running desktop pet");
+}
+
+/// Checks GitHub for a newer release, downloads it in the background, and
+/// offers "Restart to update" in the menu. Nothing installs until the user
+/// clicks it.
+mod updates {
+    use std::{sync::Mutex, thread, time::Duration};
+    use tauri::{AppHandle, Manager};
+    use tauri_plugin_updater::{Update, UpdaterExt};
+
+    use super::TrayState;
+
+    const EVERY: Duration = Duration::from_secs(6 * 60 * 60);
+
+    /// A downloaded update waiting for the user, plus whether a check is running.
+    #[derive(Default)]
+    pub struct Pending {
+        ready: Mutex<Option<(Update, Vec<u8>)>>,
+        busy: Mutex<bool>,
+    }
+
+    pub fn label(app: &AppHandle) -> String {
+        let pending = app.state::<Pending>();
+        let ready = pending.ready.lock().unwrap();
+        match ready.as_ref() {
+            Some((u, _)) => format!("Restart to update to {}", u.version),
+            None => "Check for updates".into(),
+        }
+    }
+
+    fn set_label(app: &AppHandle, text: &str) {
+        let item = app.state::<Mutex<TrayState>>().lock().unwrap().update.clone();
+        if let Some(item) = item {
+            let _ = item.set_text(text);
+        }
+    }
+
+    /// Looks for an update and downloads it. Returns a message for the menu
+    /// when there's nothing to install.
+    async fn check(app: &AppHandle) -> Option<&'static str> {
+        let pending = app.state::<Pending>();
+        {
+            let mut busy = pending.busy.lock().unwrap();
+            if *busy || pending.ready.lock().unwrap().is_some() {
+                return None;
+            }
+            *busy = true;
+        }
+        let found = match app.updater() {
+            Ok(updater) => updater.check().await,
+            Err(e) => Err(e),
+        };
+        let message = match found {
+            Ok(None) => Some("Up to date"),
+            Ok(Some(update)) => match update.download(|_, _| {}, || {}).await {
+                Ok(bytes) => {
+                    *pending.ready.lock().unwrap() = Some((update, bytes));
+                    None
+                }
+                Err(_) => Some("Couldn't download the update"),
+            },
+            Err(_) => Some("Couldn't check for updates"),
+        };
+        *pending.busy.lock().unwrap() = false;
+        set_label(app, &label(app));
+        message
+    }
+
+    /// Check at startup and every few hours (installed builds only).
+    pub fn watch(app: AppHandle) {
+        if cfg!(debug_assertions) {
+            return;
+        }
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(20)); // let the pet settle in first
+            tauri::async_runtime::block_on(check(&app));
+            thread::sleep(EVERY);
+        });
+    }
+
+    pub fn menu_clicked(app: AppHandle) {
+        let ready = app.state::<Pending>().ready.lock().unwrap().take();
+        if let Some((update, bytes)) = ready {
+            set_label(&app, "Installing update…");
+            // On Windows the installer closes the app itself; elsewhere we restart into the new version.
+            if update.install(bytes).is_ok() {
+                app.restart();
+            }
+            set_label(&app, "Update failed, try again later");
+            return;
+        }
+        tauri::async_runtime::spawn(async move {
+            set_label(&app, "Checking for updates…");
+            if let Some(message) = check(&app).await {
+                set_label(&app, message);
+            }
+        });
+    }
+}
+
+/// Notices when you step away (so the pet naps) and when you've been working a
+/// long stretch without a break (so it can suggest one). It only reads how long
+/// ago the last keyboard or mouse input happened, never what it was.
+mod presence {
+    use std::{
+        sync::atomic::{AtomicBool, Ordering},
+        thread,
+        time::{Duration, Instant},
+    };
+    use tauri::{AppHandle, Emitter, Manager, State};
+
+    /// Idle this long and the pet dozes off.
+    const AWAY_AFTER: u64 = 3 * 60;
+    /// Idle this long counts as having taken a break.
+    const BREAK_TAKEN: u64 = 5 * 60;
+    /// Suggest a break after this much work...
+    const WORK_STRETCH: Duration = Duration::from_secs(50 * 60);
+    /// ...and again this often until one is taken.
+    const REMIND_EVERY: Duration = Duration::from_secs(15 * 60);
+
+    pub struct Settings {
+        pub breaks: AtomicBool,
+    }
+
+    impl Default for Settings {
+        fn default() -> Self {
+            Self { breaks: AtomicBool::new(true) }
+        }
+    }
+
+    #[tauri::command]
+    pub fn set_break_reminders(settings: State<Settings>, on: bool) {
+        settings.breaks.store(on, Ordering::Relaxed);
+    }
+
+    #[cfg(windows)]
+    fn idle_seconds() -> Option<u64> {
+        use windows_sys::Win32::{
+            System::SystemInformation::GetTickCount,
+            UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO},
+        };
+        unsafe {
+            let mut info = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
+            if GetLastInputInfo(&mut info) == 0 {
+                return None;
+            }
+            Some(u64::from(GetTickCount().wrapping_sub(info.dwTime) / 1000))
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn idle_seconds() -> Option<u64> {
+        #[link(name = "CoreGraphics", kind = "framework")]
+        extern "C" {
+            fn CGEventSourceSecondsSinceLastEventType(state: i32, event_type: u32) -> f64;
+        }
+        // Combined session state, any input event type.
+        let seconds = unsafe { CGEventSourceSecondsSinceLastEventType(0, u32::MAX) };
+        Some(seconds as u64)
+    }
+
+    /// Not available yet on Linux, so the pet keeps its usual routine there.
+    #[cfg(not(any(windows, target_os = "macos")))]
+    fn idle_seconds() -> Option<u64> {
+        None
+    }
+
+    pub fn watch(app: AppHandle) {
+        thread::spawn(move || {
+            let mut away = false;
+            let mut working_since = Instant::now();
+            let mut last_reminder: Option<Instant> = None;
+            loop {
+                thread::sleep(Duration::from_secs(5));
+                let Some(idle) = idle_seconds() else { return };
+
+                if idle >= AWAY_AFTER && !away {
+                    away = true;
+                    let _ = app.emit("presence", "away");
+                } else if idle < 5 && away {
+                    away = false;
+                    let _ = app.emit("presence", "back");
+                }
+
+                if idle >= BREAK_TAKEN {
+                    working_since = Instant::now();
+                    last_reminder = None;
+                    continue;
+                }
+                let enabled = app.state::<Settings>().breaks.load(Ordering::Relaxed);
+                // No reminders while the pet is hidden behind a fullscreen game or video.
+                let visible = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
+                let due = last_reminder.map_or(true, |t| t.elapsed() >= REMIND_EVERY);
+                if enabled && visible && due && working_since.elapsed() >= WORK_STRETCH {
+                    last_reminder = Some(Instant::now());
+                    let _ = app.emit("break", ());
+                }
+            }
+        });
+    }
 }
 
 /// The pet window covers the whole work area so the pet can move inside it

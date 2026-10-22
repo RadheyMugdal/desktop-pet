@@ -5,7 +5,7 @@
 // version. Set REPO to your GitHub "owner/name" before publishing.
 
 const REPO = 'RadheyMugdal/desktop-pet';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const FILES = {
   windows: 'DesktopPet-windows-x64-setup.exe',
   mac: 'DesktopPet-macos-universal.dmg',

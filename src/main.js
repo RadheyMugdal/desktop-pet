@@ -93,6 +93,16 @@ let lastPaw = 0;
 
 let zTimer = null;
 const particles = []; // floating hearts and z's
+let bubble = null; // break reminder speech bubble
+let napUntilBack = false; // asleep because you stepped away
+
+const BREAK_LINES = [
+  'Time for a stretch?',
+  'Break time! Rest your eyes.',
+  'Water break?',
+  'Stretch with me?',
+  "You've been busy. Short break?",
+];
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
@@ -533,6 +543,7 @@ async function endDrag() {
 }
 
 function onPet() {
+  if (bubble) hideBreak(); // petting counts as "got it"
   spawnFx('heart', '♥');
   setTimeout(() => spawnFx('heart', '♥'), 180);
   if (mode === 'sleep') return wake();
@@ -572,6 +583,8 @@ petEl.addEventListener('pointerup', () => {
 });
 
 window.addEventListener('contextmenu', (e) => e.preventDefault());
+// Right-click the pet for the same menu as the tray icon (Nap, Pet, Color, Outfit, Quit...).
+petEl.addEventListener('contextmenu', () => invoke('show_pet_menu'));
 
 // ---------- effects ----------
 
@@ -612,6 +625,49 @@ function stopZzz() {
   zTimer = null;
 }
 
+// ---------- you stepped away / break reminders ----------
+
+function onPresence(state) {
+  if (state === 'away') {
+    hideBreak();
+    if (mode === 'sleep') {
+      napUntilBack = true;
+      modeUntil = now() + 24 * 3600 * 1000; // already napping: keep napping until you're back
+    } else if (mode === 'sit' || mode === 'lie' || mode === 'walk') {
+      napUntilBack = true;
+      setMode('sleep', 24 * 3600); // stays asleep until you're back
+    }
+  } else if (state === 'back' && napUntilBack) {
+    napUntilBack = false;
+    if (mode === 'sleep') {
+      wake();
+      setTimeout(() => spawnFx('heart', '♥'), 700); // happy you're back
+    }
+  }
+}
+
+function showBreak() {
+  if (mode === 'drag' || mode === 'fall') return;
+  hideBreak();
+  if (mode === 'sleep') wake();
+  bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = pick(BREAK_LINES);
+  // Open toward the middle of the screen so it never runs off the edge.
+  bubble.classList.add(pos.x > view.w / 2 ? 'to-left' : 'to-right');
+  petRoot.appendChild(bubble);
+  const say = pet.reactions.sit?.find((r) => r.startsWith('meow'));
+  if (say && !animOnce && mode !== 'sleep') playOnce(say, () => loop(mode === 'lie' ? 'lie' : 'sit'));
+  bubble.timer = setTimeout(hideBreak, 60 * 1000);
+}
+
+function hideBreak() {
+  if (!bubble) return;
+  clearTimeout(bubble.timer);
+  bubble.remove();
+  bubble = null;
+}
+
 // ---------- tray + system events ----------
 
 function dropFromTop() {
@@ -640,6 +696,10 @@ listen('roam', ({ payload }) => {
   if (!roam && mode === 'walk' && walkTarget === null) startWalk(homeX());
 });
 
+listen('presence', ({ payload }) => onPresence(payload));
+listen('break', () => showBreak());
+listen('breaks', ({ payload }) => localStorage.setItem('breaks', String(payload)));
+
 listen('fullscreen', ({ payload }) => {
   paused = payload;
   if (paused) {
@@ -660,6 +720,8 @@ listen('fullscreen', ({ payload }) => {
   colorDef = pet.colors.find((c) => c.id === saved('color', '')) ?? pet.colors[0];
   outfitDef = pet.outfits.find((o) => o.id === saved('outfit', '')) ?? null;
 
+  // Before the menu is built, so its "Break reminders" check is right.
+  await invoke('set_break_reminders', { on: localStorage.getItem('breaks') !== 'false' });
   invoke('set_menu', {
     pets,
     pet: petId,

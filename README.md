@@ -27,6 +27,16 @@ You can also run it by hand from the Actions tab to get the installers as build 
 
 The installers aren't code-signed, so Windows SmartScreen and macOS Gatekeeper warn on first launch. The website explains how to get past that.
 
+### Update signing (one-time setup)
+
+Installed copies only accept updates signed with the project's update key. The key pair lives outside the repo at `~/.tauri/desktop-pet.key` (private) and `.key.pub` (public, already in `tauri.conf.json`).
+
+1. On GitHub open **Settings → Secrets and variables → Actions → New repository secret**.
+2. Name it `TAURI_SIGNING_PRIVATE_KEY` and paste the full contents of `~/.tauri/desktop-pet.key`.
+3. Keep a backup of that file somewhere safe. If it's lost, installed copies can't be updated any more and people would have to reinstall.
+
+The release workflow signs every installer and publishes `latest.json`, which is what installed copies check.
+
 ## Website
 
 `website/` is the landing page: plain HTML, CSS and JS with no build step. It uses the real sprites, so visitors can pet the kitten and dress up the cat.
@@ -45,6 +55,11 @@ The installers aren't code-signed, so Windows SmartScreen and macOS Gatekeeper w
 - Drag it and it dangles; shake it hard and it hisses when it lands and runs off
 - Tray menu: Nap time, Bring pet back, **Pet**, **Color**, **Outfit** (Cat only: bows, ribbons, heart glasses, halo, wings, cupid), **Roam freely**, Quit. Choices and home spots are saved for each pet.
 - Hides and stops animating while a fullscreen app (game or video) is in front (Windows)
+- Naps when you step away for 3 minutes and wakes up happy when you're back (Windows and macOS)
+- **Break reminders:** after 50 minutes of work without a 5-minute break, it suggests one in a speech bubble, and again every 15 minutes until you take one. Pet it to dismiss. Turn it off in the menu.
+- **Right-click the pet** for the same menu as the tray icon
+- **Start with computer** is on after installing, and you can turn it off in the menu
+- **Updates itself:** it checks GitHub every few hours, downloads new versions in the background, and shows "Restart to update" in the menu
 
 ## Why it uses so little
 
