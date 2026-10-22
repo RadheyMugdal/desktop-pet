@@ -4,7 +4,7 @@
 // these exact names, so "latest/download/<name>" always points at the newest
 // version. Set REPO to your GitHub "owner/name" before publishing.
 
-const REPO = 'YOUR-GITHUB-NAME/desktop-pet';
+const REPO = 'RadheyMugdal/desktop-pet';
 const VERSION = '0.1.0';
 const FILES = {
   windows: 'DesktopPet-windows-x64-setup.exe',
