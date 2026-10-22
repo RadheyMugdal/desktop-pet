@@ -2,6 +2,10 @@
 # release. Push a tag like v0.1.0 to publish (or run it by hand to just get the
 # files as build artifacts). Installers get fixed names so the website's
 # "releases/latest/download/<name>" links always point at the newest version.
+#
+# Installed copies update themselves from latest.json, which the last job
+# writes. Every update must be signed: add the private key from
+# ~/.tauri/desktop-pet.key as the repository secret TAURI_SIGNING_PRIVATE_KEY.
 
 name: Release
 
@@ -52,6 +56,9 @@ jobs:
       - run: npm ci
 
       - run: npx tauri build ${{ matrix.args }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
 
       - name: Collect installers under stable names
         shell: bash
@@ -60,11 +67,16 @@ jobs:
           t=src-tauri/target
           case "$RUNNER_OS" in
             Windows)
-              cp "$t"/release/bundle/nsis/*-setup.exe dist/DesktopPet-windows-x64-setup.exe ;;
+              cp "$t"/release/bundle/nsis/*-setup.exe dist/DesktopPet-windows-x64-setup.exe
+              cp "$t"/release/bundle/nsis/*-setup.exe.sig dist/DesktopPet-windows-x64-setup.exe.sig ;;
             macOS)
-              cp "$t"/universal-apple-darwin/release/bundle/dmg/*.dmg dist/DesktopPet-macos-universal.dmg ;;
+              m="$t"/universal-apple-darwin/release/bundle
+              cp "$m"/dmg/*.dmg dist/DesktopPet-macos-universal.dmg
+              cp "$m"/macos/*.app.tar.gz dist/DesktopPet-macos-universal.app.tar.gz
+              cp "$m"/macos/*.app.tar.gz.sig dist/DesktopPet-macos-universal.app.tar.gz.sig ;;
             Linux)
               cp "$t"/release/bundle/appimage/*.AppImage dist/DesktopPet-linux-x86_64.AppImage
+              cp "$t"/release/bundle/appimage/*.AppImage.sig dist/DesktopPet-linux-x86_64.AppImage.sig
               cp "$t"/release/bundle/deb/*.deb dist/DesktopPet-linux-amd64.deb ;;
           esac
           ls -la dist
@@ -79,3 +91,47 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+
+  # Tells installed copies about this version (see plugins.updater in tauri.conf.json).
+  update-manifest:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: dist
+          merge-multiple: true
+
+      - name: Write latest.json
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os
+          tag = os.environ['GITHUB_REF_NAME']
+          base = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/{tag}/"
+          mac = 'DesktopPet-macos-universal.app.tar.gz'
+          files = {
+              'windows-x86_64': 'DesktopPet-windows-x64-setup.exe',
+              'darwin-aarch64': mac,
+              'darwin-x86_64': mac,
+              'linux-x86_64': 'DesktopPet-linux-x86_64.AppImage',
+          }
+          platforms = {
+              key: {'url': base + name, 'signature': open(f'dist/{name}.sig').read().strip()}
+              for key, name in files.items()
+              if os.path.exists(f'dist/{name}.sig')
+          }
+          manifest = {
+              'version': tag.lstrip('v'),
+              'notes': f'Desktop Pet {tag}',
+              'pub_date': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+              'platforms': platforms,
+          }
+          json.dump(manifest, open('latest.json', 'w'), indent=2)
+          print(json.dumps(manifest, indent=2))
+          PY
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: latest.json

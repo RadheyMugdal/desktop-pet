@@ -83,3 +83,36 @@ body {
 }
 .fx.heart { color: #ff5d84; }
 .fx.z { color: #9fb4ff; font-size: 14px; }
+
+/* Break reminder. Static on purpose: no animation, so it costs nothing while it's up. */
+.bubble {
+  position: absolute;
+  bottom: calc(100% - 18px);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #fffaf2;
+  color: #2a211d;
+  font: 600 13px/1.25 system-ui, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(42, 33, 29, 0.12);
+  pointer-events: none;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  border: 7px solid transparent;
+  border-top-color: #fffaf2;
+}
+.bubble.to-left {
+  right: 30%;
+}
+.bubble.to-left::after {
+  right: 14px;
+}
+.bubble.to-right {
+  left: 30%;
+}
+.bubble.to-right::after {
+  left: 14px;
+}
