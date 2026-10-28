@@ -1,4 +1,5 @@
 [
+  { "id": "tabby", "name": "Tabby" },
   { "id": "kitten", "name": "Kitten" },
   { "id": "cat", "name": "Cat" }
 ]

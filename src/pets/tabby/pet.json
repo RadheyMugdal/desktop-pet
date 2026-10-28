@@ -1,0 +1,53 @@
+{
+  "name": "Tabby",
+  "frameSize": 360,
+  "scale": 0.5,
+  "mouth": 286,
+  "smooth": true,
+  "ground": 350,
+  "hitbox": [46, 124, 314, 350],
+  "grip": [180, 39],
+  "walkSpeed": 60,
+
+  "colors": [{ "id": "tabby", "name": "Tabby", "file": "sit.png" }],
+  "outfits": [],
+
+  "fallback": "sit",
+  "sleepPoses": ["nap"],
+  "reactions": {
+    "sit": ["happy"],
+    "lie": ["happy"]
+  },
+
+  "animations": {
+    "sit": { "file": "sit.png", "row": 0, "frames": 28, "fps": 4 },
+    "walk_right": { "file": "walk_right.png", "row": 0, "frames": 8, "fps": 8 },
+    "walk_left": { "file": "walk_left.png", "row": 0, "frames": 8, "fps": 8 },
+    "run_right": { "file": "run_right.png", "row": 0, "frames": 8, "fps": 10, "speed": 230 },
+    "run_left": { "file": "run_left.png", "row": 0, "frames": 8, "fps": 10, "speed": 230 },
+    "crouch_right": { "file": "crouch_right.png", "row": 0, "frames": 2, "fps": 5 },
+    "crouch_left": { "file": "crouch_left.png", "row": 0, "frames": 2, "fps": 5 },
+    "jump_right": { "file": "jump_right.png", "row": 0, "frames": 3, "fps": 8, "hold": true },
+    "jump_left": { "file": "jump_left.png", "row": 0, "frames": 3, "fps": 8, "hold": true },
+    "land_right": { "file": "land_right.png", "row": 0, "frames": 2, "fps": 8 },
+    "land_left": { "file": "land_left.png", "row": 0, "frames": 2, "fps": 8 },
+    "yawn_sit": { "file": "yawn.png", "row": 0, "frames": 8, "fps": 6 },
+    "nap": { "file": "sleep.png", "row": 0, "frames": 8, "fps": 3 },
+    "held": { "file": "held.png", "row": 0, "frames": 8, "fps": 4 },
+    "dangle": { "file": "dangle.png", "row": 0, "frames": 1 },
+    "eat_right": { "file": "eat_right.png", "row": 0, "frames": 8, "fps": 6 },
+    "eat_left": { "file": "eat_left.png", "row": 0, "frames": 8, "fps": 6 },
+    "lie_down": { "file": "lie_down.png", "row": 0, "frames": 4, "fps": 6 },
+    "lie": { "file": "lie.png", "row": 0, "frames": 8, "fps": 3 },
+    "happy": { "file": "happy.png", "row": 0, "frames": 8, "fps": 8 },
+    "upset": { "file": "upset.png", "row": 0, "frames": 8, "fps": 7 },
+    "hunt_right": { "file": "hunt_right.png", "row": 0, "frames": 8, "fps": 8 },
+    "hunt_left": { "file": "hunt_left.png", "row": 0, "frames": 8, "fps": 8 },
+    "bat_right": { "file": "bat_right.png", "row": 0, "frames": 8, "fps": 10 },
+    "bat_left": { "file": "bat_left.png", "row": 0, "frames": 8, "fps": 10 },
+    "peek_left": { "file": "peek_left.png", "row": 0, "frames": 8, "fps": 4 },
+    "peek_right": { "file": "peek_right.png", "row": 0, "frames": 8, "fps": 4 },
+    "stretch_right": { "file": "stretch_right.png", "row": 0, "frames": 8, "fps": 6 },
+    "stretch_left": { "file": "stretch_left.png", "row": 0, "frames": 8, "fps": 6 }
+  }
+}

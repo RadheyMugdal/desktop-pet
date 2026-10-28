@@ -44,8 +44,7 @@ body {
 }
 
 #body.drag {
-  transform-origin: 50% 15%;
-  animation: wiggle 0.5s ease-in-out infinite;
+  transform-origin: 50% 12%; /* held by the scruff; main.js swings it from here */
 }
 #body.drag #pet {
   cursor: grabbing;
@@ -83,6 +82,7 @@ body {
 }
 .fx.heart { color: #ff5d84; }
 .fx.z { color: #9fb4ff; font-size: 14px; }
+.fx.alert { color: #ffb02e; font-size: 22px; font-weight: 900; }
 
 /* Break reminder. Static on purpose: no animation, so it costs nothing while it's up. */
 .bubble {
@@ -115,4 +115,78 @@ body {
 }
 .bubble.to-right::after {
   left: 14px;
+}
+
+/* A reminder stands out a little more than the other messages. */
+.bubble.reminder {
+  background: #fff4c8;
+  font-size: 14px;
+}
+.bubble.reminder::after {
+  border-top-color: #fff4c8;
+}
+
+/* Focus timer: a small clock above the pet's head. Text changes once a second. */
+.clock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 30px);
+  translate: -50% 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(42, 33, 29, 0.82);
+  color: #fffaf2;
+  font: 700 12px/1.3 ui-monospace, Menlo, Consolas, monospace;
+  pointer-events: none;
+}
+
+/* Things in the room: the food bowl and the yarn ball. */
+#world,
+#front {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.bowl {
+  position: absolute;
+  translate: 0 -40px;
+  opacity: 0;
+  transition: translate 0.35s cubic-bezier(0.3, 1.6, 0.6, 1), opacity 0.2s;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.25));
+}
+.bowl.placed {
+  translate: 0 0;
+  opacity: 1;
+}
+.bowl.front {
+  pointer-events: auto;
+  cursor: grab;
+}
+.bowl.held {
+  cursor: grabbing;
+  filter: drop-shadow(0 10px 6px rgba(0, 0, 0, 0.3));
+}
+.bowl.gone {
+  translate: 30px 0;
+  opacity: 0;
+  transition: translate 0.7s ease-in, opacity 0.7s ease-in;
+}
+.bowl[data-food="2"] .k3,
+.bowl[data-food="1"] .k3,
+.bowl[data-food="1"] .k2,
+.bowl[data-food="0"] .k1,
+.bowl[data-food="0"] .k2,
+.bowl[data-food="0"] .k3 {
+  display: none;
+}
+.yarn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: grab;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+.yarn:active {
+  cursor: grabbing;
 }

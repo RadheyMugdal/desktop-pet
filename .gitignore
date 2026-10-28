@@ -8,3 +8,8 @@ src-tauri/gen/
 # OS junk
 .DS_Store
 Thumbs.db
+
+assets/new-cat/preview/
+
+# Discarded sprite drafts (kept locally)
+assets/new-cat/old/
