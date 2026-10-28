@@ -1,8 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions for the pet window",
-  "windows": ["main"],
+  "description": "Permissions for the pet window and the focus & reminders window",
+  "windows": [
+    "main",
+    "panel"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-set-position",

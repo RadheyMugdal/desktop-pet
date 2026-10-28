@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Focus &amp; reminders</title>
+    <style>
+      :root {
+        --bg: #fffaf2;
+        --card: #ffffff;
+        --ink: #2a211d;
+        --muted: #7d6e66;
+        --line: #eadfd5;
+        --accent: #e05a6d;
+        --accent-ink: #ffffff;
+        --soft: #fbeee6;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1f1a18;
+          --card: #2a2320;
+          --ink: #f5ece6;
+          --muted: #b3a59c;
+          --line: #3d332e;
+          --accent: #ef7285;
+          --soft: #352b27;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--ink); }
+      body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 18px; }
+      h2 { font-size: 15px; margin: 0 0 10px; }
+      section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+      .row { display: flex; gap: 8px; align-items: center; }
+      button {
+        font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 8px 12px;
+        background: var(--soft); color: var(--ink); cursor: pointer;
+      }
+      button.primary { background: var(--accent); color: var(--accent-ink); }
+      button:hover { filter: brightness(0.97); }
+      input {
+        font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+        border-radius: 10px; padding: 8px 10px; min-width: 0;
+      }
+      input[type="text"] { flex: 1; }
+      .big { font: 700 32px/1 ui-monospace, Menlo, Consolas, monospace; margin: 4px 0 12px; }
+      .muted { color: var(--muted); font-size: 13px; }
+      ul { list-style: none; margin: 10px 0 0; padding: 0; }
+      li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+      li .when { font-weight: 700; min-width: 64px; }
+      li .what { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      li button { padding: 4px 9px; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h2>Focus timer</h2>
+      <div id="idle">
+        <p class="muted">Your cat sits quietly with you, then tells you when to take a break.</p>
+        <div class="row">
+          <button data-min="15">15 min</button>
+          <button class="primary" data-min="25">25 min</button>
+          <button data-min="50">50 min</button>
+        </div>
+      </div>
+      <div id="running" class="hidden">
+        <div class="big" id="left">25:00</div>
+        <button id="stop">Stop</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Reminders</h2>
+      <form id="add" class="row">
+        <input id="time" type="time" required aria-label="Time" />
+        <input id="text" type="text" maxlength="120" placeholder="Call mom" required aria-label="Reminder" />
+        <button class="primary" type="submit">Add</button>
+      </form>
+      <p class="muted" id="hint">At that time your cat walks to the middle of the screen with your message.</p>
+      <ul id="list"></ul>
+    </section>
+
+    <script>
+      const { emit, listen } = window.__TAURI__.event;
+      let state = { focus: null, reminders: [] };
+      const $ = (id) => document.getElementById(id);
+
+      function render() {
+        const f = state.focus;
+        $('idle').classList.toggle('hidden', !!f);
+        $('running').classList.toggle('hidden', !f);
+        tickClock();
+        const list = $('list');
+        list.replaceChildren();
+        for (const r of [...state.reminders].sort((a, b) => a.at - b.at)) {
+          const li = document.createElement('li');
+          const when = document.createElement('span');
+          when.className = 'when';
+          const d = new Date(r.at);
+          const today = new Date().toDateString() === d.toDateString();
+          when.textContent = (today ? '' : 'Tomorrow ') + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const what = document.createElement('span');
+          what.className = 'what';
+          what.textContent = r.text;
+          const del = document.createElement('button');
+          del.textContent = '✕';
+          del.title = 'Remove';
+          del.onclick = () => emit('reminder-remove', { id: r.id });
+          li.append(when, what, del);
+          list.append(li);
+        }
+      }
+
+      function tickClock() {
+        const f = state.focus;
+        if (!f) return;
+        const left = Math.max(0, f.end - Date.now());
+        const m = Math.floor(left / 60000);
+        const s = Math.floor((left % 60000) / 1000);
+        $('left').textContent = `${m}:${String(s).padStart(2, '0')}`;
+      }
+      setInterval(tickClock, 1000);
+
+      document.querySelectorAll('[data-min]').forEach((b) => {
+        b.onclick = () => emit('focus-start', { minutes: Number(b.dataset.min) });
+      });
+      $('stop').onclick = () => emit('focus-stop');
+
+      $('add').onsubmit = (e) => {
+        e.preventDefault();
+        const [h, m] = $('time').value.split(':').map(Number);
+        const text = $('text').value.trim();
+        if (isNaN(h) || !text) return;
+        const at = new Date();
+        at.setHours(h, m, 0, 0);
+        if (at.getTime() <= Date.now()) at.setDate(at.getDate() + 1); // that time already passed today: tomorrow
+        emit('reminder-add', { at: at.getTime(), text });
+        $('text').value = '';
+      };
+
+      listen('panel-state', ({ payload }) => {
+        state = { focus: payload?.focus ?? null, reminders: payload?.reminders ?? [] };
+        render();
+      });
+      emit('panel-ready');
+      render();
+    </script>
+  </body>
+</html>
