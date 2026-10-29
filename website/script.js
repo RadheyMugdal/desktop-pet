@@ -5,7 +5,7 @@
 // version. Set REPO to your GitHub "owner/name" before publishing.
 
 const REPO = 'RadheyMugdal/desktop-pet';
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const FILES = {
   windows: 'DesktopPet-windows-x64-setup.exe',
   mac: 'DesktopPet-macos-universal.dmg',
@@ -24,17 +24,19 @@ const FRAME = 32;
 
 function setupSprite(el) {
   const d = el.dataset;
+  const frameSize = Number(d.frameSize || FRAME);
   const scale = Number(d.scale || 1);
   const frames = Number(d.frames || 1);
   const fps = Number(d.fps || 1);
   const cols = Number(d.cols || frames);
   const rows = Number(d.rows || 1);
-  const cell = FRAME * scale;
+  const cell = frameSize * scale;
 
   el.style.width = el.style.height = `${cell}px`;
   el.style.backgroundImage = d.sheet ? `url("${d.sheet}")` : 'none';
   el.style.backgroundSize = `${cols * cell}px ${rows * cell}px`;
   el.style.backgroundPositionY = `${-Number(d.row || 0) * cell}px`;
+  el.style.imageRendering = frameSize > 32 ? 'auto' : '';
   el.style.setProperty('--frames', frames);
   el.style.setProperty('--to', `${-frames * cell}px`);
   el.style.setProperty('--dur', `${frames / fps}s`);
@@ -240,11 +242,21 @@ setTimeout(() => {
 // ---------- kitten card ----------
 
 const kittenSprite = document.getElementById('kitten-sprite');
-document.querySelector('.chips[data-target="kitten"]').addEventListener('click', (e) => {
+document.querySelector('.chips[data-target="kitten"]')?.addEventListener('click', (e) => {
   const chip = e.target.closest('.chip');
   if (!chip) return;
   chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === chip));
   updateSprite(kittenSprite, { sheet: chip.dataset.sheet, frames: chip.dataset.frames, fps: chip.dataset.fps });
+});
+
+// ---------- tabby card ----------
+
+const tabbySprite = document.getElementById('tabby-sprite');
+document.querySelector('.chips[data-target="tabby"]')?.addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === chip));
+  updateSprite(tabbySprite, { sheet: chip.dataset.sheet, frames: chip.dataset.frames, fps: chip.dataset.fps });
 });
 
 // ---------- cat dress-up ----------

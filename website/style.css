@@ -544,9 +544,7 @@ section {
   box-shadow: var(--shadow);
   transition: transform 0.25s ease;
 }
-.card:nth-child(2) {
-  translate: 0 22px;
-}
+/* .card:nth-child(2) removed for 2x3 grid */
 .card:hover {
   transform: translateY(-4px) rotate(-0.4deg);
 }
@@ -633,7 +631,7 @@ section {
 
 .pets-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 22px;
   align-items: start;
 }
@@ -980,4 +978,16 @@ code {
   .sprite {
     animation: none !important;
   }
+}
+
+.tabby-card .pet-stage > * {
+  margin-bottom: 24px;
+}
+.card-art .px-icon {
+  margin-bottom: 30px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08));
+  transition: transform 0.25s ease;
+}
+.card:hover .px-icon {
+  transform: scale(1.08);
 }

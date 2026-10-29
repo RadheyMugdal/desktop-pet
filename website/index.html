@@ -127,6 +127,45 @@
               fullscreen video. It's built on Tauri, not Electron.
             </p>
           </article>
+          <article class="card">
+            <div class="card-art">
+              <svg viewBox="0 0 32 32" class="px-icon" width="48" height="48">
+                <circle cx="16" cy="16" r="12" fill="#d95a53" />
+                <path d="M7 12 Q16 20 25 12 M8 19 Q16 11 24 19 M16 4 Q20 16 16 28 M12 5 Q6 16 12 27" stroke="#b83e38" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M26 22 Q30 26 28 30" stroke="#d95a53" stroke-width="2" fill="none" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3>Interactive play &amp; food</h3>
+            <p>
+              Drop a bouncy yarn ball for your cat to chase and bat across the screen, or serve a full food bowl from the tray menu.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-art">
+              <svg viewBox="0 0 32 32" class="px-icon" width="48" height="48">
+                <circle cx="16" cy="16" r="13" fill="#e8bb58" />
+                <circle cx="16" cy="16" r="11" fill="#fffdfa" />
+                <path d="M16 9 V16 H21" stroke="#4a3728" stroke-width="2.2" stroke-linecap="round" fill="none" />
+                <circle cx="16" cy="16" r="1.5" fill="#4a3728" />
+              </svg>
+            </div>
+            <h3>Focus timer &amp; breaks</h3>
+            <p>
+              Start a Pomodoro focus session. Your pet sits quietly beside a desk clock, then gently suggests a stretch when it's break time.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-art">
+              <svg viewBox="0 0 32 32" class="px-icon" width="48" height="48">
+                <path d="M6 12 H10 L16 7 V25 L10 20 H6 Z" fill="#7fa069" />
+                <path d="M20 11 Q24 16 20 21 M23 8 Q29 16 23 24" stroke="#7fa069" stroke-width="2" stroke-linecap="round" fill="none" />
+              </svg>
+            </div>
+            <h3>Smart auto-rest &amp; audio</h3>
+            <p>
+              Senses when you're busy typing and curls up quietly. Gentle chirps, friendly trills, and soft purrs with zero annoying drones.
+            </p>
+          </article>
         </div>
       </section>
 
@@ -135,6 +174,22 @@
         <h2 class="section-title"><span class="px">02</span> Pick your pet</h2>
 
         <div class="pets-grid">
+          <article class="pet-card tabby-card">
+            <div class="pet-stage soft">
+              <div class="sprite" id="tabby-sprite" data-sheet="assets/tabby/sit.png" data-frame-size="360" data-frames="28" data-scale="0.45" data-fps="4"></div>
+            </div>
+            <div class="pet-info">
+              <p class="tag">New in 0.3 · Flagship</p>
+              <h3>Tabby</h3>
+              <p>Hand-drawn, expressive animations. Loafs, stretches, plays with yarn, and sleeps peacefully.</p>
+              <div class="chips" data-target="tabby">
+                <button class="chip on" data-sheet="assets/tabby/sit.png" data-frames="28" data-fps="4">Sitting</button>
+                <button class="chip" data-sheet="assets/tabby/happy.png" data-frames="8" data-fps="8">Happy</button>
+                <button class="chip" data-sheet="assets/tabby/sleep.png" data-frames="8" data-fps="3">Napping</button>
+              </div>
+            </div>
+          </article>
+
           <article class="pet-card kitten-card">
             <div class="pet-stage soft">
               <div class="sprite" id="kitten-sprite" data-sheet="assets/kitten/idle.png" data-frames="10" data-scale="5" data-fps="6"></div>
@@ -179,7 +234,7 @@
       <!-- ============ DOWNLOAD ============ -->
       <section class="download" id="download">
         <h2 class="section-title"><span class="px">03</span> Adopt one</h2>
-        <p class="section-lede">Free, version <span data-version>0.2.0</span>. Install it, and your pet drops onto your taskbar.</p>
+        <p class="section-lede">Free, version <span data-version>0.3.0</span>. Install it, and your pet drops onto your taskbar.</p>
 
         <div class="dl-grid">
           <article class="dl-card" data-os="windows">
@@ -250,6 +305,18 @@
             <p>
               No. The app never connects to the internet. It only checks where your mouse is, to know when you're
               pointing at the pet, and that never leaves your computer.
+            </p>
+          </details>
+          <details>
+            <summary>How do I play with the yarn ball or feed my pet?</summary>
+            <p>
+              Right-click your pet or click the cat icon in your system tray to drop an interactive yarn ball or place a food bowl. You can drag and flick the yarn ball across the screen! Double-click the yarn ball anytime to put it away.
+            </p>
+          </details>
+          <details>
+            <summary>How does the Focus timer work?</summary>
+            <p>
+              Choose <b>Focus &amp; reminders</b> in the tray menu. Start a 25-minute Pomodoro session, and your pet will quietly keep you company with a little desk clock, then notify you when it's time for a 5-minute break.
             </p>
           </details>
           <details>

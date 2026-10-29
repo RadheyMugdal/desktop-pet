@@ -47,13 +47,14 @@ The release workflow signs every installer and publishes `latest.json`, which is
 
 ## What it does
 
-- Two pets: **Kitten** (the default; round-faced, sits in its box, has a Dracula look) and **Cat** (more than 40 animations, 3 colors, 11 outfits). Switch between them from the tray.
-- Falls in from the top of the screen and lands on its **home spot**, by default the bottom-right corner near the clock. It mostly stays there, taking a few steps now and then. Drag it somewhere and that becomes its new home. Turn on **Roam freely** in the tray to let it wander the whole taskbar.
-- The Cat sits, lies down, washes, scratches and yawns; takes naps (more often after 11 pm) in one of four sleep poses
-- Click it to pet it (the Cat meows or stands on its hind legs, the Kitten jumps); click while it sleeps to wake it
-- The Cat swats at your mouse cursor when you move it close by
+- Three pets: **Tabby** (the new flagship default; hand-drawn expressive animations, stretching, loafing, and cozy nap cycles), **Kitten** (classic pixel kitten; round-faced, sits in its box, Dracula costume), and **Cat** (more than 40 pixel animations, 3 colors, 11 outfits). Switch between them from the tray.
+- **Interactive play & feeding:** Drop a bouncy yarn ball for your cat to chase and bat across the screen, or serve a bowl of food from the tray menu.
+- **Pomodoro focus timer & break reminders:** Set a 25-minute focus session where your pet quietly keeps you company beside a mini desk clock, then gently suggests a stretch when it's break time.
+- **Smart work awareness (auto-rest):** Senses when you are actively typing or moving your mouse, quietly curling up and loafing so it never interrupts your workflow.
+- **Cozy audio:** Sweet short meows, happy greeting trills, and soft purrs with volume normalization and zero harsh looping drones.
+- Falls in from the top of the screen and lands on its **home spot**, by default the bottom-right corner near the clock. It mostly stays there, taking a few steps now and then. Drag it somewhere and that becomes its new home. Turn on **Roam freely** in the tray to let it wander the taskbar.
 - Drag it and it dangles; shake it hard and it hisses when it lands and runs off
-- Tray menu: Nap time, Bring pet back, **Pet**, **Color**, **Outfit** (Cat only: bows, ribbons, heart glasses, halo, wings, cupid), **Roam freely**, Quit. Choices and home spots are saved for each pet.
+- Tray menu: Nap time, Bring pet back, **Pet**, **Color**, **Outfit**, **Focus & reminders**, **Feed**, **Play with yarn**, **Roam freely**, Quit. Choices and home spots are saved for each pet.
 - Hides and stops animating while a fullscreen app (game or video) is in front (Windows)
 - Naps when you step away for 3 minutes and wakes up happy when you're back (Windows and macOS)
 - **Break reminders:** after 50 minutes of work without a 5-minute break, it suggests one in a speech bubble, and again every 15 minutes until you take one. Pet it to dismiss. Turn it off in the menu.

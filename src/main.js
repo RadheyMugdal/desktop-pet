@@ -13,8 +13,7 @@
 // simply skipped (one-shots) or replaced by its `fallback` pose (loops).
 //
 // Everything here only uses the pet's own window, so it works the same on
-// Windows, macOS and Linux. The one exception is perching on other windows,
-// which asks Rust where the focused window is (not available on Wayland).
+// Windows, macOS and Linux.
 
 const { getCurrentWindow, currentMonitor, monitorFromPoint, cursorPosition } = window.__TAURI__.window;
 const { PhysicalPosition, PhysicalSize } = window.__TAURI__.dpi;
@@ -38,15 +37,15 @@ const HUNGRY = 70; // hunger (0-100) at which it starts asking for food
 // fixed: loop rate that overrides the animation's own (for movement).
 // dur: seconds [min, max] before picking something else to do.
 const MODES = {
-  sit: { dur: [6, 14] },
-  lie: { dur: [8, 20] },
-  walk: { dur: [3, 8], fixed: 30 }, // move smoothly; the legs still step at the walk cycle's own fps
-  sleep: { dur: [20, 45] },
+  sit: { dur: [16, 36] }, // calm sitting / observing
+  lie: { dur: [22, 50] }, // relaxed loafing
+  walk: { dur: [3, 6], fixed: 30 }, // short, natural strolls
+  sleep: { dur: [30, 60] }, // cozy catnaps
   drag: { fixed: 30 }, // the pointer handlers move the pet; the loop animates the swing
   fall: { fixed: 60 },
   eat: { dur: [6, 8] },
   hunt: { dur: [1.2, 2.2] }, // wiggling before a pounce
-  chase: { dur: [40, 80], fixed: 30 }, // playing with the yarn
+  chase: { dur: [30, 60], fixed: 30 }, // playing with the yarn
   hidden: { dur: [4, 10] }, // walked off the edge of the screen
   peek: { dur: [30, 30] }, // its peek animation decides when it's over
 };
@@ -125,6 +124,7 @@ let leaping = false; // airborne from a pounce (not dropped)
 
 let cursorBusy = false;
 let lastCursorPoll = 0;
+let userBusyUntil = 0; // timestamp until when user was actively moving mouse
 const cur = { x: NaN, y: NaN, movedAt: 0, rested: true }; // cursor in window CSS px
 let lastPaw = 0;
 let lastHunt = 0;
@@ -139,10 +139,6 @@ let swingV = 0;
 let lastDragX = 0;
 let napUntilBack = false; // asleep because you stepped away
 let lastWoke = -Infinity; // so it doesn't nap again straight after waking up
-
-let perch = null; // the window the pet is standing on: { id, x0, x1, y, raw }
-let landing = null; // the window a jump is aiming for
-let perchTimer = null;
 
 let love = Number(saved('love', 50)); // 0-100: how loved the pet feels
 let loveAt = Number(saved('loveAt', Date.now()));
@@ -182,9 +178,9 @@ const ground = () => view.h - box.h;
 const side = () => (dir < 0 ? 'left' : 'right');
 const maxX = () => view.w - box.w;
 const settled = () => mode === 'sit' || mode === 'lie';
-// Walking limits: the screen, or the top of the window the pet stands on.
-const minWalkX = () => (perch ? Math.max(0, perch.x0 - box.w * 0.2) : 0);
-const maxWalkX = () => (perch ? Math.min(maxX(), perch.x1 - box.w * 0.8) : maxX());
+// Walking limits: the screen.
+const minWalkX = () => 0;
+const maxWalkX = () => maxX();
 
 // ---------- sprites ----------
 
@@ -421,7 +417,6 @@ async function checkArea() {
   if (!(await placeWindow(c.x, c.y))) return;
   pos.x = (at.x - area.x) / dpr;
   shown = { x: NaN, y: NaN };
-  leavePerch();
   if (mode !== 'drag' && mode !== 'fall') {
     clampX();
     pos.y = ground();
@@ -551,16 +546,17 @@ function jumpTo(x, height, toY = pos.y) {
   playOnce('crouch', () => launch(dx, height, pos.y - toY));
 }
 
-/** Once in a while: get to the other side of the screen, by one big leap or a long walk. */
+/** Once in a while: get to the other side of the screen, by a playful leap or a stroll. */
 function crossScreen() {
   const atLeft = pos.x < maxX() / 2;
   const far = atLeft ? maxX() : 0;
   const nearEdge = atLeft ? pos.x < box.w * 1.5 : maxX() - pos.x < box.w * 1.5;
   if (nearEdge && Math.random() < 0.5) {
-    // Big leap from edge to edge, high enough to clear the whole screen.
-    return jumpTo(far, rand(0.25, 0.4) * view.h);
+    // Playful ground-level hop towards the other side
+    const hopDist = (atLeft ? 1 : -1) * rand(2.5, 4.5) * box.w;
+    return jumpTo(pos.x + hopDist, rand(0.6, 1.1) * box.h);
   }
-  startWalk(far, 600); // stroll all the way over
+  startWalk(far, 60); // stroll all the way over
 }
 
 /**
@@ -595,35 +591,31 @@ function nextMode() {
   }
   if (bowl?.full) return goEat();
   checkArea();
-  if (perch) return nextOnPerch();
 
   const l = currentLove();
-  const weights = focus
-    ? { sit: 50, lie: 45, sleep: now() - lastWoke > 10 * 60000 ? 5 : 0 } // keeping you company quietly while you focus
+  const userBusy = now() < userBusyUntil;
+  const weights = focus || userBusy
+    ? { sit: 55, lie: 40, sleep: now() - lastWoke > 8 * 60000 ? 5 : 0 } // peaceful loafing while you are actively working
     : {
-        walk: 30,
-        leap: 8,
+        walk: 25,
+        leap: 10,
         cross: 3,
-        sit: 25,
-        lie: 10,
-        sleep: now() - lastWoke > 10 * 60000 ? 4 : 0, // the odd catnap, never two close together
-        perch: 8,
-        hide: animation('peek') ? 3 : 0,
+        sit: 35,
+        lie: 20,
+        sleep: now() - lastWoke > 6 * 60000 ? 6 : 0, // cozy catnap
+        hide: animation('peek') ? 2 : 0,
         play: yarn && now() - playTired > 60000 ? 25 : 0,
-        zoomies: 4,
-        follow: l > 60 && !isNaN(cur.x) ? 10 : l > 40 && !isNaN(cur.x) ? 4 : 0,
-        sulk: l < 20 ? 15 : 0,
+        zoomies: 2,
+        sulk: l < 20 ? 10 : 0,
       };
   let r = Math.random() * Object.values(weights).reduce((a, b) => a + b);
   for (const [name, w] of Object.entries(weights)) {
     if ((r -= w) > 0) continue;
     if (name === 'leap') return leap();
     if (name === 'cross') return crossScreen();
-    if (name === 'perch') return tryPerch();
     if (name === 'hide') return hideAway();
     if (name === 'play') return startChase();
     if (name === 'zoomies') return zoomies();
-    if (name === 'follow') return startWalk(cur.x - box.w / 2, 20); // come and sit by you
     if (name === 'sulk') return startWalk(pos.x < maxX() / 2 ? 0 : maxX(), 30, () => setMode('lie'));
     if (name !== 'walk') return setMode(name);
     // Wander: head away from a nearby edge, otherwise pick a random direction.
@@ -663,10 +655,6 @@ function doSoon(f) {
   if (mode === 'drag' || mode === 'fall') {
     next = f;
     return;
-  }
-  if (perch) {
-    next = f;
-    return jumpDown();
   }
   if (mode === 'hidden' || mode === 'peek') {
     next = null;
@@ -739,14 +727,16 @@ function walk(dt) {
     walkTarget = null;
     return arrive ? arrive() : setMode(Math.random() < 0.7 ? 'sit' : 'lie');
   }
-  // Turn around at the edges (unless heading off screen on purpose, or still walking back on).
+  // Settle smoothly at the edges instead of ping-pong bouncing.
   const lo = minWalkX();
   const hi = maxWalkX();
   if (!walkFree && ((pos.x <= lo && dir < 0) || (pos.x >= hi && dir > 0))) {
     pos.x = clamp(pos.x, lo, hi);
-    if (perch && walkTarget === null && Math.random() < 0.3) return jumpDown(); // hop off the end
-    dir = -dir;
-    loop(gait());
+    dir = pos.x <= lo ? 1 : -1; // turn inward to face the room
+    walkTarget = null;
+    onArrive = null;
+    render();
+    return setMode(Math.random() < 0.65 ? 'sit' : 'lie');
   }
   render();
 }
@@ -772,19 +762,12 @@ function fall(dt) {
     vy = -vy * BOUNCE;
   }
 
-  // Coming down onto the window it jumped at, or the floor.
-  let floor = ground();
-  if (landing) {
-    const top = landing.y - box.h;
-    const mid = pos.x + box.w / 2;
-    if (vy > 0 && prevY <= top + 1 && mid > landing.x0 && mid < landing.x1) floor = Math.min(floor, top);
-  }
+  // Coming down onto the floor.
+  const floor = ground();
   if (pos.y < floor) return render();
 
-  if (vy > 900) playSound('thump', Math.min(0.7, vy / 3000));
+  if (vy > 1200) playSound('thump', Math.min(0.22, 0.12 + (vy - 1200) / 6000));
   pos.y = floor;
-  if (floor < ground()) startPerch(landing);
-  landing = null;
   render();
 
   if (grumpy) {
@@ -819,9 +802,9 @@ function fall(dt) {
   bodyEl.classList.add('land');
 }
 
-// ---------- the cursor: swats, pounces, following you ----------
+// ---------- cursor awareness: auto-settling while user is active ----------
 
-/** Look at the cursor a few times a second, to swat at it or pounce once it stops. */
+/** Track cursor activity to stay quiet and settled when the user is actively working. */
 function pollCursor() {
   if (cursorBusy) return;
   cursorBusy = true;
@@ -830,49 +813,20 @@ function pollCursor() {
     .then((c) => {
       const x = (c.x - area.x) / dpr;
       const y = (c.y - area.y) / dpr;
-      const moved = Math.hypot(x - cur.x, y - cur.y) > 3 || isNaN(cur.x);
+      const moved = Math.hypot(x - (isNaN(cur.x) ? x : cur.x), y - (isNaN(cur.y) ? y : cur.y)) > 8;
       cur.x = x;
       cur.y = y;
       if (moved) {
         cur.movedAt = now();
-        cur.rested = false;
-        swatAt(x, y);
-      } else if (!cur.rested && now() - cur.movedAt > 1000) {
-        cur.rested = true; // it just came to rest: maybe pounce
-        maybeHunt(x, y);
+        userBusyUntil = now() + 6000; // user actively working; pet stays peacefully settled
       }
     })
     .catch(() => {}) // some systems (Wayland) don't share the cursor position
     .finally(() => (cursorBusy = false));
 }
 
-/** Swat at the mouse when it moves close by. */
-function swatAt(cx, cy) {
-  if (!settled() || animOnce || bubble || now() - lastPaw < PAW_COOLDOWN) return;
-  const swat = animation('paw') ? 'paw' : animation('bat') ? 'bat' : null;
-  if (!swat) return;
-  const mid = pos.x + box.w / 2;
-  const near = Math.abs(cx - mid) < box.w * 0.7 && cy > pos.y + box.h * 0.2 && cy < pos.y + box.h;
-  if (!near) return;
-  lastPaw = now();
-  dir = cx < mid ? -1 : 1;
-  const back = mode;
-  playOnce(swat, () => loop(back === 'lie' ? 'lie' : 'sit'));
-}
-
-/** The cursor stopped on the floor nearby: crouch, wiggle, and pounce on it. */
-function maybeHunt(cx, cy) {
-  if (focus || bubble || perch || animOnce || grumpy || !(settled() || mode === 'walk')) return;
-  if (now() - lastHunt < HUNT_COOLDOWN) return;
-  const mid = pos.x + box.w / 2;
-  const dx = cx - mid;
-  const onFloor = cy > view.h - box.h * 2.5 && cy < view.h;
-  if (!onFloor || Math.abs(dx) < box.w * 0.6 || Math.abs(dx) > box.w * 6) return;
-  if (Math.random() > 0.3 + currentLove() / 250) return;
-  lastHunt = now();
-  dir = dx < 0 ? -1 : 1;
-  setMode('hunt');
-}
+function swatAt() {}
+function maybeHunt() {}
 
 function pounce() {
   if (Math.random() < 0.5) playSound('trill', 0.4);
@@ -929,8 +883,6 @@ function swingHeld(dt) {
 function startDrag(e) {
   leaping = false;
   snatching = false;
-  leavePerch();
-  landing = null;
   hideBubble();
   swing = 0;
   swingV = 0;
@@ -987,11 +939,12 @@ function onPet() {
   const hearts = l > 70 ? 3 : l > 35 ? 2 : 1;
   for (let i = 0; i < hearts; i++) setTimeout(() => spawnFx('heart', '♥'), i * 180);
   if (mode !== 'sleep') {
-    // A meow when you start petting; keep petting and it purrs.
-    if (now() - (onPet.lastMeow ?? 0) > 2500) {
+    // A sweet meow or happy trill when you start petting; keep petting and it gently purrs.
+    if (now() - (onPet.lastMeow ?? 0) > 2200) {
       onPet.lastMeow = now();
-      playSound('meow', 0.35);
-    } else playSound('purr', 0.5, 2.2);
+      if (Math.random() < 0.45) playSound('trill', 0.32);
+      else playSound('meow', 0.3);
+    } else playSound('purr', 0.28, 1.8);
   }
   if (mode === 'sleep') return wake();
   if (mode === 'hidden' || mode === 'peek') return comeOut();
@@ -1039,86 +992,6 @@ petEl.addEventListener('pointerup', () => {
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 // Right-click the pet for the same menu as the tray icon.
 petEl.addEventListener('contextmenu', () => invoke('show_pet_menu'));
-
-// ---------- standing on windows ----------
-
-/** A window rectangle from Rust, in this window's CSS px. */
-function toView(r) {
-  const s = r.logical ? dpr : 1; // macOS reports points, not pixels
-  return { x: (r.x * s - area.x) / dpr, y: (r.y * s - area.y) / dpr, w: (r.w * s) / dpr, h: (r.h * s) / dpr };
-}
-
-/** Jump up onto the top edge of the window you're using, if there's room. */
-function tryPerch() {
-  modeUntil = now() + 1500; // don't pick again while we ask
-  invoke('perch_target')
-    .catch(() => null)
-    .then((r) => {
-      if (!settled() && mode !== 'walk') return; // something else happened meanwhile
-      const v = r && toView(r);
-      const x0 = v ? Math.max(v.x, 0) : 0;
-      const x1 = v ? Math.min(v.x + v.w, view.w) : 0;
-      const room = v && x1 - x0 > box.w * 1.6 && v.y > box.h * 1.2 && v.y < view.h - box.h * 0.8;
-      if (!room) return setMode('sit');
-      landing = { id: r.id, x0, x1, y: v.y, raw: r };
-      const top = v.y - box.h;
-      const x = clamp(pos.x + rand(-1, 1) * box.w, x0 - box.w * 0.2, x1 - box.w * 0.8);
-      jumpTo(x, pos.y - top + box.h * 0.6, top);
-    });
-}
-
-function startPerch(target) {
-  perch = target;
-  clearInterval(perchTimer);
-  // Watch the window: if it moves, resizes, closes or minimizes, the pet falls off.
-  perchTimer = setInterval(() => {
-    if (!perch) return clearInterval(perchTimer);
-    const id = perch.id;
-    invoke('perch_track', { id })
-      .catch(() => null)
-      .then((r) => {
-        if (!perch || perch.id !== id) return;
-        const a = perch.raw;
-        const same = r && Math.abs(r.x - a.x) < 2 && Math.abs(r.y - a.y) < 2 && Math.abs(r.w - a.w) < 2;
-        if (!same) fallOff();
-      });
-  }, 300);
-}
-
-function leavePerch() {
-  perch = null;
-  clearInterval(perchTimer);
-}
-
-/** Its window moved or went away: tumble down to the floor. */
-function fallOff() {
-  leavePerch();
-  if (mode === 'drag' || mode === 'fall') return;
-  vx = 0;
-  vy = 0;
-  leaping = true;
-  setMode('fall');
-}
-
-function jumpDown() {
-  const x = clamp(pos.x + rand(-1.5, 1.5) * box.w, 0, maxX());
-  leavePerch();
-  jumpTo(x, box.h * 0.5, ground());
-}
-
-function nextOnPerch() {
-  const weights = { walk: 30, sit: 30, lie: 15, sleep: now() - lastWoke > 10 * 60000 ? 4 : 0, down: focus ? 0 : 15 };
-  let r = Math.random() * Object.values(weights).reduce((a, b) => a + b);
-  for (const [name, w] of Object.entries(weights)) {
-    if ((r -= w) > 0) continue;
-    if (name === 'down') return jumpDown();
-    if (name === 'walk') {
-      dir = pick([-1, 1]);
-      return startWalk(null);
-    }
-    return setMode(name);
-  }
-}
 
 // ---------- hide and peek ----------
 
@@ -1189,7 +1062,7 @@ function feed() {
   updateExtraHitboxes();
   requestAnimationFrame(() => bowl?.els.forEach((el) => el.classList.add('placed'))); // drops in with a little bounce
   if (settled() && !animOnce) spawnFx('alert', '!'); // food!
-  if (mode !== 'sleep') setTimeout(() => playSound('meow', 0.4), 250);
+  if (mode !== 'sleep') setTimeout(() => playSound('meow', 0.32), 250);
   setTimeout(() => doSoon(goEat), settled() ? 450 : 0);
 }
 
@@ -1215,7 +1088,6 @@ function bowlSpot() {
 
 function goEat() {
   if (!bowl?.full) return setMode('sit');
-  if (perch) return doSoon(goEat);
   const { right, x } = bowlSpot();
   dir = right ? 1 : -1;
   startWalk(x, 30, atBowl);
@@ -1373,8 +1245,8 @@ function finishEat() {
   addLove(10);
   // Sits back, happy and full.
   setMode('sit');
-  playSound('lick', 0.9);
-  setTimeout(() => playSound('purr', 0.45, 2.5), 1300);
+  playSound('lick', 0.3);
+  setTimeout(() => playSound('purr', 0.28, 2.0), 1300);
   playOnce('happy', () => setMode('sit'));
   for (let i = 0; i < 3; i++) setTimeout(() => spawnFx('heart', '♥'), 300 + i * 220);
 }
@@ -1625,7 +1497,7 @@ function bat() {
     if (Math.abs(yarn.x - mid) > box.w * 0.8 || yarn.y < view.h - box.h * 0.7) return;
     yarn.vx = dir * rand(220, 480);
     yarn.vy = -rand(120, 420);
-    playSound('bat', 0.6);
+    playSound('bat', 0.35);
     yarn.touched = Date.now();
     addLove(0.5);
     wakeYarn();
@@ -1649,7 +1521,7 @@ function say(text, kind, ms = 60000, opts = {}) {
 
 function deliver() {
   if (!pending || paused || napUntilBack) return;
-  if (pending.center && !pending.moved && !perch) {
+  if (pending.center && !pending.moved) {
     // Come to the middle of the screen with the message.
     const target = view.w / 2 - box.w / 2;
     if (Math.abs(pos.x - target) > box.w && mode !== 'drag' && mode !== 'fall') {
@@ -1681,8 +1553,8 @@ function showBubble(text, kind, ms) {
   el.classList.add(pos.x > view.w / 2 ? 'to-left' : 'to-right');
   petRoot.appendChild(el);
   bubble = { el, kind, timer: setTimeout(hideBubble, ms) };
-  if (kind === 'hungry') playSound('ask', 0.4);
-  else playSound('meow', kind === 'reminder' ? 0.45 : 0.35);
+  if (kind === 'hungry') playSound('ask', 0.32);
+  else playSound('meow', kind === 'reminder' ? 0.35 : 0.28);
   modeUntil = Math.max(modeUntil, now() + 2000);
 }
 
@@ -1758,13 +1630,13 @@ function sendPanelState() {
 
 // Short sounds, each with a couple of copies so one can overlap another.
 const SOUNDS = {
-  meow: ['sounds/meow_short.mp3', 'sounds/meow2.mp3'], // hello, food's here, a message
-  ask: ['sounds/meow_long.mp3'], // asking for food
-  purr: ['sounds/purr_sleep.mp3'],
+  meow: ['sounds/meow.mp3', 'sounds/meow_short.mp3', 'sounds/meow_gentle.mp3'], // sweet short meows
+  ask: ['sounds/meow_short.mp3', 'sounds/meow.mp3'], // asking for food
+  purr: ['sounds/purr.mp3'],
   hiss: ['sounds/hiss.mp3'],
   trill: ['sounds/trill1.mp3', 'sounds/trill2.mp3', 'sounds/trill3.mp3'], // happy "mrrp"
   lick: ['sounds/lick.mp3'],
-  thump: ['sounds/thump.mp3'],
+  thump: ['sounds/soft_drop.ogg'], // gentle padded paw landing
   bat: ['sounds/bat.mp3'],
 };
 const soundPool = {};
@@ -1776,7 +1648,7 @@ for (const [name, files] of Object.entries(SOUNDS)) {
 }
 
 /** Play a sound; `seconds` cuts a long one (the purr) short with a fade. */
-function playSound(name, volume = 0.4, seconds = 0) {
+function playSound(name, volume = 0.32, seconds = 0) {
   if (!soundOn || paused) return;
   const voices = pick(soundPool[name] ?? [[]]);
   const a = voices.find((v) => v.paused) ?? voices[0];
@@ -1785,6 +1657,7 @@ function playSound(name, volume = 0.4, seconds = 0) {
   try {
     a.currentTime = 0;
     a.volume = volume;
+    a.playbackRate = 0.98 + Math.random() * 0.04; // subtle pitch variation
     a.play()?.catch(() => {}); // autoplay can be blocked until the first click
   } catch {}
   if (seconds) fadeOut(a, seconds);
@@ -1810,14 +1683,12 @@ function fadeOut(a, after, over = 0.8) {
 
 function startSleepPurr() {
   if (!soundOn || paused) return;
-  sleepPurr ??= Object.assign(new Audio('sounds/purr_sleep.mp3'), { loop: true });
-  clearInterval(sleepPurr.fade);
-  sleepPurr.volume = 0.25;
-  sleepPurr.play()?.catch(() => {});
+  // A brief gentle settling purr that softly fades out after 2.5s, letting the pet sleep in quiet peace
+  playSound('purr', 0.2, 2.5);
 }
 
 function stopSleepPurr() {
-  if (sleepPurr && !sleepPurr.paused) fadeOut(sleepPurr, 0, 0.6);
+  if (sleepPurr && !sleepPurr.paused) fadeOut(sleepPurr, 0, 0.4);
 }
 
 // ---------- effects ----------
@@ -1873,7 +1744,6 @@ function onPresence(state) {
       modeUntil = now() + 24 * HOUR; // already napping: keep napping until you're back
     } else if (settled() || mode === 'walk' || mode === 'chase') {
       napUntilBack = true;
-      leavePerch();
       setMode('sleep', 24 * 3600); // stays asleep until you're back
     }
   } else if (state === 'back' && napUntilBack) {
@@ -1889,8 +1759,6 @@ function onPresence(state) {
 // ---------- tray + system events ----------
 
 function dropFromTop() {
-  leavePerch();
-  landing = null;
   pos.x = view.w * rand(0.3, 0.8);
   pos.y = -box.h * 0.3;
   clampX();
