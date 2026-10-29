@@ -259,10 +259,11 @@
             <p class="req">macOS 10.15 or later · Apple silicon &amp; Intel</p>
             <a class="btn btn-primary" data-file="mac">Download .dmg</a>
             <details>
-              <summary>First launch</summary>
+              <summary>First launch &amp; verification</summary>
               <p>
-                Drag Desktop Pet into Applications. The first time, <b>right-click</b> the app and choose
-                <b>Open</b>, then click <b>Open</b> again. macOS asks because the app isn't notarized yet.
+                Drag Desktop Pet into Applications. The first time, <b>right-click</b> (or Control-click) the app and choose
+                <b>Open</b>, then click <b>Open</b> again. If macOS blocks it, open Terminal and run:<br />
+                <code>xattr -cr /Applications/Desktop\ Pet.app</code>
               </p>
             </details>
           </article>
@@ -305,6 +306,12 @@
             <p>
               No. The app never connects to the internet. It only checks where your mouse is, to know when you're
               pointing at the pet, and that never leaves your computer.
+            </p>
+          </details>
+          <details>
+            <summary>Why does macOS say “Apple cannot verify that this app is free of malware”?</summary>
+            <p>
+              macOS Gatekeeper displays this warning for any open-source app downloaded outside the Mac App Store that isn't signed with a paid Apple Developer ID. Desktop Pet is 100% open-source, safe, and privacy-respecting. You can open it by right-clicking the app and selecting <b>Open</b>, or by running <code>xattr -cr /Applications/Desktop\ Pet.app</code> in Terminal.
             </p>
           </details>
           <details>

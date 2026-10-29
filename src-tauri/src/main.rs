@@ -262,7 +262,12 @@ fn main() {
         .setup(|app| {
             // A desktop pet lives in the menu bar, not the Dock.
             #[cfg(target_os = "macos")]
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_visible_on_all_workspaces(true);
+                }
+            }
             TrayIconBuilder::with_id(TRAY_ID)
                 .icon(app.default_window_icon().unwrap().clone())
                 .tooltip("Desktop Pet")

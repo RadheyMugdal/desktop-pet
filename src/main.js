@@ -603,7 +603,7 @@ function nextMode() {
         sit: 35,
         lie: 20,
         sleep: now() - lastWoke > 6 * 60000 ? 6 : 0, // cozy catnap
-        hide: animation('peek') ? 2 : 0,
+        hide: 0, // stay visible on screen; no random off-screen disappearance
         play: yarn && now() - playTired > 60000 ? 25 : 0,
         zoomies: 2,
         sulk: l < 20 ? 10 : 0,
@@ -1857,7 +1857,13 @@ listen('fullscreen', ({ payload }) => {
   const m = await currentMonitor();
   await placeWindow(m.position.x + m.size.width / 2, m.position.y + m.size.height / 2);
   dropFromTop(); // entrance: fall in from the top of the screen
+  try {
+    await win.setVisibleOnAllWorkspaces(true);
+  } catch {}
   await win.show();
+  try {
+    await win.setVisibleOnAllWorkspaces(true);
+  } catch {}
 
   if (focus && focus.end > Date.now()) showClock();
   else if (focus) stopFocus(false);
