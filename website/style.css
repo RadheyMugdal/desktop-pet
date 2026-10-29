@@ -389,8 +389,8 @@ h1 em {
   position: absolute;
   left: 0;
   top: 0;
-  width: 96px;
-  height: 96px;
+  width: 108px;
+  height: 108px;
   cursor: grab;
   outline: none;
   will-change: translate;

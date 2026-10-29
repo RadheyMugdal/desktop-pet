@@ -59,7 +59,7 @@ document.querySelectorAll('.sprite').forEach(setupSprite);
 const nav = document.querySelector('.nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
 
-// ---------- the miniature desktop ----------
+// ---------- the miniature desktop (Tabby) ----------
 
 const screen = document.getElementById('screen');
 const mini = document.getElementById('mini-pet');
@@ -69,16 +69,21 @@ const hint = document.getElementById('hint');
 const clock = document.getElementById('clock');
 
 const TASKBAR = 30;
-const PET = 96;
-// cols = frames in the strip (a single-frame pose still needs to know the strip's width).
+const PET = 108;
+
 const looks = {
-  sit: { sheet: 'assets/kitten/idle.png', frames: '10', cols: '10', fps: '6' },
-  box: { sheet: 'assets/kitten/box.png', frames: '4', cols: '4', fps: '4' },
-  nap: { sheet: 'assets/kitten/idle.png', frames: '1', cols: '10', fps: '1' },
+  sit: { sheet: 'assets/tabby/sit.png', frameSize: '360', frames: '28', cols: '28', fps: '4' },
+  nap: { sheet: 'assets/tabby/sleep.png', frameSize: '360', frames: '8', cols: '8', fps: '3' },
+  happy: { sheet: 'assets/tabby/happy.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
+  walk_right: { sheet: 'assets/tabby/walk_right.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
+  walk_left: { sheet: 'assets/tabby/walk_left.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
+  held: { sheet: 'assets/tabby/held.png', frameSize: '360', frames: '8', cols: '8', fps: '4' },
+  yawn: { sheet: 'assets/tabby/yawn.png', frameSize: '360', frames: '8', cols: '8', fps: '6' },
 };
 
-const kit = { x: 0, y: -PET, vy: 0, home: 1, state: 'fall', since: 0, drag: null };
+const kit = { x: 0, y: -PET, vy: 0, home: 1, state: 'fall', since: 0, drag: null, dir: 1 };
 let zTimer = null;
+let happyTimer = null;
 
 const bounds = () => ({ w: screen.clientWidth, h: screen.clientHeight });
 const groundY = () => bounds().h - TASKBAR - PET;
@@ -90,8 +95,8 @@ function look(name) {
 
 function placeKit() {
   mini.style.translate = `${Math.round(kit.x)}px ${Math.round(kit.y)}px`;
-  const hx = Math.min(Math.max(kit.x - 70, 8), bounds().w - 160);
-  hint.style.left = `${hx}px`; // left/top, since the bob animation owns translate
+  const hx = Math.min(Math.max(kit.x - 70, 8), bounds().w - 180);
+  hint.style.left = `${hx}px`;
   hint.style.top = `${Math.max(kit.y - 34, 8)}px`;
 }
 
@@ -109,14 +114,30 @@ function setState(state) {
   kit.state = state;
   kit.since = performance.now();
   clearInterval(zTimer);
+  clearTimeout(happyTimer);
   if (state === 'nap') {
     look('nap');
     zTimer = setInterval(() => spawn('z', 'z'), 1300);
-  } else if (state === 'box') {
-    look('box');
+  } else if (state === 'yawn') {
+    look('yawn');
+  } else if (state === 'happy') {
+    look('happy');
+    happyTimer = setTimeout(() => {
+      if (kit.state === 'happy') setState('sit');
+    }, 1500);
+  } else if (state === 'drag') {
+    look('held');
+  } else if (state === 'walk') {
+    look(kit.dir >= 0 ? 'walk_right' : 'walk_left');
   } else {
     look('sit');
   }
+}
+
+function startWalk(target) {
+  kit.walkTo = target;
+  kit.dir = target >= kit.x ? 1 : -1;
+  setState('walk');
 }
 
 function bump(cls) {
@@ -128,8 +149,8 @@ function bump(cls) {
 function petKitten() {
   hint.classList.add('gone');
   spawn('', '♥');
-  setTimeout(() => spawn('', '♥'), 160);
-  if (kit.state !== 'sit') setState('sit');
+  setTimeout(() => spawn('', '♥'), 180);
+  setState('happy');
   bump('happy');
 }
 
@@ -150,28 +171,27 @@ function frame(t) {
     placeKit();
   } else if (kit.state === 'walk') {
     const target = kit.walkTo;
-    const step = Math.sign(target - kit.x) * 34 * dt;
+    const step = kit.dir * 42 * dt;
     kit.x = Math.abs(target - kit.x) <= Math.abs(step) ? target : kit.x + step;
-    kit.hop = (kit.hop + dt) % 0.4;
-    mini.querySelector('.mini-body').style.translate = `0 ${-Math.round(Math.sin((kit.hop / 0.4) * Math.PI) * 4)}px`;
     if (kit.x === target) {
-      mini.querySelector('.mini-body').style.translate = '';
       setState('sit');
     }
     placeKit();
   } else if (kit.state !== 'drag') {
-    // A calm little routine near its home spot, like the app.
     const held = (t - kit.since) / 1000;
-    if (kit.state === 'sit' && held > 7) {
+    if (kit.state === 'sit' && held > 6) {
       const r = Math.random();
-      if (r < 0.35) setState('box');
-      else if (r < 0.6) setState('nap');
-      else {
-        kit.walkTo = Math.min(Math.max(homeX() + (Math.random() * 2 - 1) * 60, 4), bounds().w - PET - 4);
-        kit.hop = 0;
-        setState('walk');
+      if (r < 0.28) {
+        setState('yawn');
+      } else if (r < 0.56) {
+        setState('nap');
+      } else {
+        const dest = Math.min(Math.max(homeX() + (Math.random() * 2 - 1) * 80, 8), bounds().w - PET - 8);
+        startWalk(dest);
       }
-    } else if ((kit.state === 'box' && held > 5) || (kit.state === 'nap' && held > 7)) {
+    } else if (kit.state === 'yawn' && held > 3) {
+      setState('sit');
+    } else if (kit.state === 'nap' && held > 7) {
       setState('sit');
     }
   }
@@ -204,7 +224,7 @@ mini.addEventListener('pointerup', () => {
   if (!d) return;
   if (!d.moved) return petKitten();
   mini.classList.remove('dragging');
-  kit.home = kit.x / (bounds().w - PET - 18); // new home spot, like the app
+  kit.home = kit.x / (bounds().w - PET - 18);
   kit.vy = 0;
   setState('fall');
 });
