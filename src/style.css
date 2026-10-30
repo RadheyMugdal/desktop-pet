@@ -83,6 +83,7 @@ body {
 .fx.heart { color: #ff5d84; }
 .fx.z { color: #9fb4ff; font-size: 14px; }
 .fx.alert { color: #ffb02e; font-size: 22px; font-weight: 900; }
+.fx.star { color: #ffb703; font-size: 18px; }
 
 /* Break reminder. Static on purpose: no animation, so it costs nothing while it's up. */
 .bubble {

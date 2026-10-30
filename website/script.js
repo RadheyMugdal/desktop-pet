@@ -77,9 +77,31 @@ const looks = {
   happy: { sheet: 'assets/tabby/happy.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
   walk_right: { sheet: 'assets/tabby/walk_right.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
   walk_left: { sheet: 'assets/tabby/walk_left.png', frameSize: '360', frames: '8', cols: '8', fps: '8' },
+  run_right: { sheet: 'assets/tabby/run_right.png', frameSize: '360', frames: '8', cols: '8', fps: '10' },
+  run_left: { sheet: 'assets/tabby/run_left.png', frameSize: '360', frames: '8', cols: '8', fps: '10' },
   held: { sheet: 'assets/tabby/held.png', frameSize: '360', frames: '8', cols: '8', fps: '4' },
   yawn: { sheet: 'assets/tabby/yawn.png', frameSize: '360', frames: '8', cols: '8', fps: '6' },
+  stretch: { sheet: 'assets/tabby/stretch_right.png', frameSize: '360', frames: '8', cols: '8', fps: '6' },
+  eat: { sheet: 'assets/tabby/eat_right.png', frameSize: '360', frames: '8', cols: '8', fps: '6' },
+  jump: { sheet: 'assets/tabby/jump_right.png', frameSize: '360', frames: '3', cols: '3', fps: '8' },
+  bat: { sheet: 'assets/tabby/bat_right.png', frameSize: '360', frames: '8', cols: '8', fps: '10' },
 };
+
+const webSounds = {
+  trill: new Audio('assets/sounds/trill1.mp3'),
+  meow: new Audio('assets/sounds/meow.mp3'),
+  bat: new Audio('assets/sounds/bat.mp3'),
+};
+function playWebSound(name) {
+  try {
+    const s = webSounds[name];
+    if (s) {
+      s.currentTime = 0;
+      s.volume = 0.32;
+      s.play().catch(() => {});
+    }
+  } catch {}
+}
 
 const kit = { x: 0, y: -PET, vy: 0, home: 1, state: 'fall', since: 0, drag: null, dir: 1 };
 let zTimer = null;
@@ -129,6 +151,16 @@ function setState(state) {
     look('held');
   } else if (state === 'walk') {
     look(kit.dir >= 0 ? 'walk_right' : 'walk_left');
+  } else if (state === 'run') {
+    look(kit.dir >= 0 ? 'run_right' : 'run_left');
+  } else if (state === 'stretch') {
+    look('stretch');
+  } else if (state === 'eat') {
+    look('eat');
+  } else if (state === 'jump') {
+    look('jump');
+  } else if (state === 'bat') {
+    look('bat');
   } else {
     look('sit');
   }
@@ -177,6 +209,20 @@ function frame(t) {
       setState('sit');
     }
     placeKit();
+  } else if (kit.state === 'run') {
+    const target = kit.walkTo;
+    const step = kit.dir * 125 * dt;
+    kit.x = Math.abs(target - kit.x) <= Math.abs(step) ? target : kit.x + step;
+    if (kit.x === target) {
+      if (kit.onArrive) {
+        const cb = kit.onArrive;
+        kit.onArrive = null;
+        cb();
+      } else {
+        setState('sit');
+      }
+    }
+    placeKit();
   } else if (kit.state !== 'drag') {
     const held = (t - kit.since) / 1000;
     if (kit.state === 'sit' && held > 6) {
@@ -218,15 +264,156 @@ mini.addEventListener('pointermove', (e) => {
   kit.y = Math.min(Math.max(e.clientY - r.top - d.oy, -20), groundY());
   placeKit();
 });
+let lastWebClick = 0;
 mini.addEventListener('pointerup', () => {
   const d = kit.drag;
   kit.drag = null;
   if (!d) return;
-  if (!d.moved) return petKitten();
+  if (!d.moved) {
+    const t = performance.now();
+    if (t - lastWebClick < 350) {
+      lastWebClick = 0;
+      return doTrick();
+    }
+    lastWebClick = t;
+    return petKitten();
+  }
   mini.classList.remove('dragging');
   kit.home = kit.x / (bounds().w - PET - 18);
   kit.vy = 0;
   setState('fall');
+});
+mini.addEventListener('dblclick', (e) => {
+  e.preventDefault();
+  doTrick();
+});
+
+let activeItem = null;
+
+function tossYarn() {
+  if (kit.state === 'drag') return;
+  hint.classList.add('gone');
+  if (activeItem) activeItem.remove();
+  const item = document.createElement('div');
+  item.className = 'screen-item yarn-toy';
+  screen.appendChild(item);
+  activeItem = item;
+
+  let yx = Math.random() < 0.5 ? 40 : bounds().w - 70;
+  let yy = 20;
+  let vy = 0;
+  let vx = (Math.random() * 2 - 1) * 70;
+  let ground = bounds().h - TASKBAR - 24;
+
+  spawn('alert', '!');
+  playWebSound('meow');
+
+  const stepYarn = () => {
+    if (!item.isConnected) return;
+    vy += 800 * 0.02;
+    yy += vy * 0.02;
+    yx += vx * 0.02;
+    if (yy >= ground) {
+      yy = ground;
+      vy = vy > 40 ? -vy * 0.5 : 0;
+      vx *= 0.9;
+    }
+    if (yx < 10) { yx = 10; vx = Math.abs(vx) * 0.6; }
+    if (yx > bounds().w - 34) { yx = bounds().w - 34; vx = -Math.abs(vx) * 0.6; }
+    item.style.translate = `${Math.round(yx)}px ${Math.round(yy)}px`;
+    if (Math.abs(vy) > 5 || yy < ground) requestAnimationFrame(stepYarn);
+  };
+  requestAnimationFrame(stepYarn);
+
+  setTimeout(() => {
+    if (!item.isConnected) return;
+    kit.walkTo = Math.max(10, Math.min(yx - 20, bounds().w - PET - 10));
+    kit.dir = kit.walkTo >= kit.x ? 1 : -1;
+    kit.onArrive = () => {
+      setState('bat');
+      playWebSound('bat');
+      spawn('', '♥');
+      bump('happy');
+      vy = -260;
+      vx = kit.dir * 140;
+      requestAnimationFrame(stepYarn);
+      setTimeout(() => {
+        item.style.transition = 'opacity 0.5s ease-out';
+        item.style.opacity = '0';
+        setTimeout(() => item.remove(), 500);
+        setState('happy');
+      }, 700);
+    };
+    setState('run');
+  }, 350);
+}
+
+function giveTreat() {
+  if (kit.state === 'drag') return;
+  hint.classList.add('gone');
+  if (activeItem) activeItem.remove();
+  const item = document.createElement('div');
+  item.className = 'screen-item fish-treat';
+  item.textContent = '🐟';
+  screen.appendChild(item);
+  activeItem = item;
+
+  const tx = Math.max(20, Math.min(kit.x + (Math.random() < 0.5 ? -1 : 1) * 90, bounds().w - 50));
+  const ty = bounds().h - TASKBAR - 26;
+  item.style.translate = `${Math.round(tx)}px ${Math.round(ty)}px`;
+
+  spawn('alert', '!');
+  playWebSound('meow');
+
+  setTimeout(() => {
+    kit.walkTo = Math.max(8, Math.min(tx - 36, bounds().w - PET));
+    kit.dir = kit.walkTo >= kit.x ? 1 : -1;
+    kit.onArrive = () => {
+      setState('eat');
+      setTimeout(() => {
+        item.remove();
+        playWebSound('trill');
+        spawn('', '♥');
+        setTimeout(() => spawn('', '♥'), 180);
+        setState('happy');
+        bump('happy');
+      }, 1400);
+    };
+    setState('run');
+  }, 250);
+}
+
+function doTrick() {
+  if (kit.state === 'drag') return;
+  hint.classList.add('gone');
+  playWebSound('trill');
+  setState('stretch');
+  spawn('star', '✨');
+  setTimeout(() => {
+    setState('jump');
+    playWebSound('trill');
+    bump('happy');
+    spawn('star', '⭐');
+    setTimeout(() => spawn('star', '✦'), 150);
+    setTimeout(() => setState('happy'), 600);
+  }, 900);
+}
+
+function cozyNap() {
+  if (kit.state === 'drag') return;
+  hint.classList.add('gone');
+  setState('yawn');
+  setTimeout(() => setState('nap'), 1400);
+}
+
+document.getElementById('playground-bar')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.play-btn');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'yarn') tossYarn();
+  if (action === 'treat') giveTreat();
+  if (action === 'trick') doTrick();
+  if (action === 'nap') cozyNap();
 });
 mini.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {

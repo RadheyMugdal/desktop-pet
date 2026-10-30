@@ -991,3 +991,69 @@ code {
 .card:hover .px-icon {
   transform: scale(1.08);
 }
+
+
+/* Interactive Playground Bar & Toys */
+.playground-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  font: 600 13px/1 var(--body);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ginger);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
+  user-select: none;
+}
+.play-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ginger);
+  background: #fffdfa;
+}
+.play-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0 0 0 var(--ginger);
+}
+.play-btn .play-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.fx span.star {
+  color: #ffb703;
+  font-size: 16px;
+}
+.fx span.alert {
+  color: #ff9f1c;
+  font: 900 20px/1 var(--body);
+}
+
+.screen-item {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  will-change: translate, rotate;
+}
+.screen-item.yarn-toy {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff85a2, #e9577a 65%, #a82c4c);
+  box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+.screen-item.fish-treat {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
