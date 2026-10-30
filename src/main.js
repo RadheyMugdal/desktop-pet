@@ -964,6 +964,48 @@ function onPet() {
   bodyEl.classList.add('happy');
 }
 
+const TRICK_CHEERS = ['*purr!* ✨', 'Mrrp! ⭐', 'Good stretch! 🐾', 'Prrr! 🌟', '✦ Tada! ✦'];
+
+function onTrick() {
+  if (mode === 'drag' || mode === 'fall' || animOnce) return;
+  if (mode === 'sleep') wake();
+  if (bubble) hideBubble();
+  addLove(5);
+  playSound('trill', 0.45);
+  setTimeout(() => playSound('trill', 0.38), 260);
+
+  // Spawn celebratory sparkle and star particles
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => spawnFx('star', pick(['✨', '⭐', '✦'])), i * 130);
+  }
+
+  const back = mode === 'lie' ? 'lie' : 'sit';
+  if (animation('stretch')) {
+    playOnce('stretch', () => {
+      bodyEl.classList.remove('happy');
+      void bodyEl.offsetWidth;
+      bodyEl.classList.add('happy');
+      if (Math.random() < 0.65) say(pick(TRICK_CHEERS), 'focus', 3000);
+      loop(back);
+    });
+  } else if (animation('jump')) {
+    playOnce('jump', () => {
+      bodyEl.classList.remove('happy');
+      void bodyEl.offsetWidth;
+      bodyEl.classList.add('happy');
+      if (Math.random() < 0.65) say(pick(TRICK_CHEERS), 'focus', 3000);
+      loop(back);
+    });
+  } else {
+    bodyEl.classList.remove('happy');
+    void bodyEl.offsetWidth;
+    bodyEl.classList.add('happy');
+    if (Math.random() < 0.65) say(pick(TRICK_CHEERS), 'focus', 3000);
+  }
+}
+
+let lastPetClick = 0;
+
 petEl.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
   petEl.setPointerCapture(e.pointerId);
@@ -985,8 +1027,18 @@ petEl.addEventListener('pointerup', () => {
   const p = pointer;
   pointer = null;
   invoke('hold_cursor', { hold: false });
-  if (p.moved) endDrag();
-  else onPet();
+  if (p.moved) {
+    endDrag();
+  } else {
+    const t = now();
+    if (t - lastPetClick < 350) {
+      lastPetClick = 0;
+      onTrick();
+    } else {
+      lastPetClick = t;
+      onPet();
+    }
+  }
 });
 
 window.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1774,6 +1826,7 @@ listen('tray', ({ payload }) => {
   if (payload === 'reset') dropFromTop();
   if (payload === 'feed') feed();
   if (payload === 'yarn') toggleYarn();
+  if (payload === 'trick') onTrick();
 });
 
 listen('pet', ({ payload }) => {

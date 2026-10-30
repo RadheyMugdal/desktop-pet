@@ -48,7 +48,8 @@ The release workflow signs every installer and publishes `latest.json`, which is
 ## What it does
 
 - Three pets: **Tabby** (the new flagship default; hand-drawn expressive animations, stretching, loafing, and cozy nap cycles), **Kitten** (classic pixel kitten; round-faced, sits in its box, Dracula costume), and **Cat** (more than 40 pixel animations, 3 colors, 11 outfits). Switch between them from the tray.
-- **Interactive play & feeding:** Drop a bouncy yarn ball for your cat to chase and bat across the screen, or serve a bowl of food from the tray menu.
+- **Interactive play, feeding & tricks:** Drop a bouncy yarn ball for your cat to chase and bat across the screen, serve a bowl of food, or **double-click the pet** to have it do a celebratory trick with joyful sparkles (`✨`), happy greeting trills, and extra love.
+- **Interactive website playground:** Experience the real Tabby on the landing page — toss a bouncy yarn ball, drop fish snacks, trigger tricks, and hear audio previews right in your browser.
 - **Pomodoro focus timer & break reminders:** Set a 25-minute focus session where your pet quietly keeps you company beside a mini desk clock, then gently suggests a stretch when it's break time.
 - **Smart work awareness (auto-rest):** Senses when you are actively typing or moving your mouse, quietly curling up and loafing so it never interrupts your workflow.
 - **Cozy audio:** Sweet short meows, happy greeting trills, and soft purrs with volume normalization and zero harsh looping drones.

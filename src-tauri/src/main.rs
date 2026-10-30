@@ -43,6 +43,7 @@ fn install_menu(app: &AppHandle, extra: &[&dyn IsMenuItem<Wry>], mut state: Tray
     let reset = MenuItem::with_id(app, "reset", "Bring pet back", true, None::<&str>)?;
     let feed = MenuItem::with_id(app, "feed", "Feed", true, None::<&str>)?;
     let yarn = MenuItem::with_id(app, "yarn", "Play with yarn", true, None::<&str>)?;
+    let trick = MenuItem::with_id(app, "trick", "Teach a trick", true, None::<&str>)?;
     let panel = MenuItem::with_id(app, "panel", "Focus timer & reminders…", true, None::<&str>)?;
     let autostart_on = app.autolaunch().is_enabled().unwrap_or(false);
     let autostart = CheckMenuItem::with_id(app, "autostart", "Start with computer", true, autostart_on, None::<&str>)?;
@@ -55,7 +56,7 @@ fn install_menu(app: &AppHandle, extra: &[&dyn IsMenuItem<Wry>], mut state: Tray
     let sep3 = PredefinedMenuItem::separator(app)?;
 
     let sep4 = PredefinedMenuItem::separator(app)?;
-    let mut items: Vec<&dyn IsMenuItem<Wry>> = vec![&nap, &feed, &yarn, &reset, &sep4, &panel, &sep1];
+    let mut items: Vec<&dyn IsMenuItem<Wry>> = vec![&nap, &feed, &yarn, &trick, &reset, &sep4, &panel, &sep1];
     items.extend_from_slice(extra);
     if !extra.is_empty() {
         items.push(&sep2);
